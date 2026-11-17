@@ -61,4 +61,3 @@ The public repository is https://github.com/GarvitSobti/agentbridge, with the fo
 ## Next task
 
 Continue M1: implement a SQLite store that applies domain state, events, and retry receipts in one transaction. Verify restart/reconnect behavior and concurrent writes before adding the loopback relay and two-terminal demonstration. See [the roadmap](docs/ROADMAP.md). Do not expose a network service or claim authenticated human approval before ADR-007 is resolved and implemented.
-

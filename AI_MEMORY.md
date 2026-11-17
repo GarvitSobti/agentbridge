@@ -11,7 +11,7 @@ Working name: Agent Bridge. Repository: `GarvitSobti/agentbridge`. Owner: Garvit
 ## Confirmed direction
 
 - Build an open-source proof of concept before pursuing commercial validation.
-- First test: Garvit and a friend coordinate two agents while working on one shared project from separate machines and branches.
+- First test: Garvit and a friend coordinate two agents while working on one shared project from separate machines and branches. The friend uses Claude; the exact client and OS are not yet confirmed.
 - Solve explicit requests, clarifications, agreed decisions, and handoffs.
 - Use existing assistants; the relay has no model and needs no separate model API key.
 - Require human acceptance before an agent starts work requested by a peer.
@@ -44,11 +44,11 @@ Working name: Agent Bridge. Repository: `GarvitSobti/agentbridge`. Owner: Garvit
 - `npm.cmd run demo:domain`: passed; eight synthetic transitions end in a self-reported completion with an explicitly not-run integration check.
 - `git diff --check`: passed.
 - Node 24.1.0 emits the expected experimental type-stripping warning; it does not perform type checking, so the separate compiler check is required.
-- Hosted checks are defined for this slice; inspect the pull request for their latest result. Network, persistence, actual credential authentication, and real assistant integrations have not been tested because they are not implemented.
+- Hosted checks passed for implementation commit `6ebf026c6388cdbc40592812137b85e878cfb5d1`: https://github.com/GarvitSobti/agentbridge/actions/runs/44051745233. Inspect the pull request for subsequent results. Network, persistence, actual credential authentication, and real assistant integrations have not been tested because they are not implemented.
 
 ## Open questions
 
-- Which assistant and OS will the second participant use? Verify the actual pair before claiming compatibility.
+- Which Claude client (Code, Desktop, or web) and OS will the second participant use? Verify the actual pair before claiming compatibility.
 - Which synthetic CRM fixture best reproduces the original coordination problem without sharing private project code?
 - Final authentication details and credential storage need an implementation ADR before network exposure.
 - MCP SDK and SQLite driver choices are deferred. Domain validation currently has no package dependency; TypeScript 5.9.3 is the single pinned development dependency.
@@ -56,8 +56,9 @@ Working name: Agent Bridge. Repository: `GarvitSobti/agentbridge`. Owner: Garvit
 
 ## Publication
 
-The public repository is https://github.com/GarvitSobti/agentbridge, with the foundation on main. Domain implementation belongs on `feat/request-domain` for pull-request review. Preserve the original preparation commits on local-foundation; inspect Git history and the PR for published revisions.
+The public repository is https://github.com/GarvitSobti/agentbridge, with the foundation on main. Domain implementation is published on `feat/request-domain` in PR #1: https://github.com/GarvitSobti/agentbridge/pull/1. The local feature branch tracks origin/feat/request-domain. Preserve the original preparation commits on local-foundation; inspect Git history and the PR for published revisions.
 
 ## Next task
 
 Continue M1: implement a SQLite store that applies domain state, events, and retry receipts in one transaction. Verify restart/reconnect behavior and concurrent writes before adding the loopback relay and two-terminal demonstration. See [the roadmap](docs/ROADMAP.md). Do not expose a network service or claim authenticated human approval before ADR-007 is resolved and implemented.
+

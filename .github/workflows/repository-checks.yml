@@ -8,8 +8,8 @@ permissions:
   contents: read
 
 jobs:
-  documentation:
-    name: Documentation foundation
+  domain-and-docs:
+    name: Domain and documentation
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -20,5 +20,9 @@ jobs:
         with:
           node-version-file: .nvmrc
           package-manager-cache: false
-      - name: Check repository files and local documentation links
-        run: node scripts/check-repo.mjs
+      - name: Install pinned development dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Check documentation, TypeScript, and domain behavior
+        run: npm run check
+      - name: Exercise the synthetic domain handoff
+        run: npm run demo:domain

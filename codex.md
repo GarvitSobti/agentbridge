@@ -11,7 +11,7 @@ This file is explicitly referenced by [AGENTS.md](AGENTS.md), the repository ins
 
 ## Development conventions
 
-- Runtime target: Node.js 24.x. Planned application language: TypeScript.
+- Runtime target: Node.js 24.x. Domain implementation language: TypeScript, using erasable syntax and strict checking. Tests and the demo are JavaScript modules.
 - Keep relay, domain logic, and adapters in one repository. Avoid microservices for this proof of concept.
 - Prefer a small dependency set. Record the rationale and lockfile when dependencies are introduced.
 - Keep credentials distinct from task data. Derive participant identity and role from credentials, not request payloads.
@@ -25,10 +25,14 @@ This file is explicitly referenced by [AGENTS.md](AGENTS.md), the repository ins
 ## Available verification
 
 ```sh
-node scripts/check-repo.mjs
+npm ci
+npm run check
+npm run demo:domain
 ```
 
-This currently checks repository files and local Markdown file links. No application build, runtime tests, or verified assistant setup exists yet. Add those commands to this guide when implemented.
+`npm run check` runs `check:docs`, `typecheck`, and `test`. The domain source is type checked; JavaScript tests and the demo run directly in Node. The synthetic demo exercises a single-process handoff. It does not authenticate humans, connect real agents, use a network, or persist state. No application build or verified assistant setup exists yet.
+
+The documentation-only checker remains available without installed dependencies: `node scripts/check-repo.mjs`. On Windows, use `npm.cmd` if PowerShell blocks `npm.ps1`.
 
 ## End a session
 

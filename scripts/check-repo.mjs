@@ -53,7 +53,7 @@ for (const file of files.filter((name) => name.endsWith('.md'))) {
 
 const metadata = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
 if (metadata.private !== true) problems.push('package.json: keep the unpublished foundation private');
-if (metadata.scripts?.check !== 'node scripts/check-repo.mjs') problems.push('package.json: unexpected check command');
+if (metadata.scripts?.['check:docs'] !== 'node scripts/check-repo.mjs') problems.push('package.json: unexpected documentation check command');
 const dependencies = Object.keys(metadata.dependencies ?? {}).length + Object.keys(metadata.devDependencies ?? {}).length;
 
 if (problems.length) {
@@ -61,5 +61,5 @@ if (problems.length) {
   process.exitCode = 1;
 } else {
   console.log(`Repository checks passed: ${markdownFiles} Markdown files, ${checkedLinks} local file links, ${required.length} required files, valid package metadata.`);
-  console.log(`Package dependencies: ${dependencies}. External URLs and Markdown anchors were not checked. No application runtime tests exist yet.`);
+  console.log(`Package dependencies: ${dependencies}. External URLs and Markdown anchors were not checked. This script does not run domain tests or type checking.`);
 }

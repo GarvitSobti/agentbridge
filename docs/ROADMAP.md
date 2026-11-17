@@ -21,7 +21,8 @@ Exit: documentation checks pass, the initial commit exists, and its files can be
 - [x] Test human-role acceptance, recipient validation, stale versions, retries, and terminal states.
 - [x] Define decision revisions and invalidate stale acknowledgments.
 - [x] Add a single-process synthetic domain handoff demo.
-- [ ] Add SQLite persistence with migrations, transactional event recording, and restart tests.
+- [x] Add SQLite persistence with migrations, transactional event recording, reopen/crash recovery, and competing-writer tests.
+- [x] Add a synthetic SQLite close/reopen and retry demonstration.
 - [ ] Add a loopback-only relay and two terminal clients for a synthetic request/reply scenario.
 
 Exit: two terminal clients complete a persisted lifecycle; invalid and duplicate operations behave as documented. This is not yet an assistant integration.

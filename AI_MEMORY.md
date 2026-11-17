@@ -4,7 +4,7 @@ Last updated: 2026-11-17
 
 ## Current position
 
-Milestone M0 is complete. The first M1 slice is implemented on `feat/request-domain`: a transport-independent request domain, strict TypeScript checking, behavioral tests, and a synthetic handoff demo. SQLite persistence and the relay remain next. No real assistant integration or pilot outcome has been verified.
+Milestone M0 is complete. PR #1 was merged and verified on main at `d16c6e63bf25642f6286f020688c00728fdd854a`. The next M1 slice on `feat/sqlite-persistence` adds SQLite persistence, transactional migrations, recovery/concurrency tests, and a storage demonstration. The loopback relay remains next. No real assistant integration or pilot outcome has been verified.
 
 Working name: Agent Bridge. Repository: `GarvitSobti/agentbridge`. Owner: Garvit Sobti. License: MIT, included in LICENSE. The unpublished package uses the name `agent-bridge`.
 
@@ -37,27 +37,37 @@ Working name: Agent Bridge. Repository: `GarvitSobti/agentbridge`. Owner: Garvit
 - Strict TypeScript source, node:test scenarios, and an eight-step single-process synthetic demo.
 - ADR-008/009 and docs/DOMAIN.md describe the implementation and its limits.
 
+## Storage slice delivered
+
+- Built-in Node SQLite with workspace, request, audit-event, and retry-receipt tables; no runtime package dependency.
+- BEGIN IMMEDIATE wraps current-state loading, domain execution, all command writes, and workspace revision changes.
+- Transactional schema migration, application identity checks, compatible reopen, and rejection of foreign/newer databases.
+- Persistent inbox/events, idempotency receipts, decision revisions, and self-reported completion evidence.
+- Real-file tests with competing writer threads, a killed child writer, lock timeouts, and SQL fault injection.
+- Storage close/reopen demo, docs/STORAGE.md, and ADR-010. Credential authentication and network delivery are still absent.
+
 ## Verification
 
-- `npm.cmd ci` with a writable offline package cache: passed using the committed dependency versions and integrity data.
-- `npm.cmd run check`: passed on Node.js 24.1.0; documentation checks (15 Markdown files and 44 local file links), strict TypeScript checking, and 34 passing tests.
-- `npm.cmd run demo:domain`: passed; eight synthetic transitions end in a self-reported completion with an explicitly not-run integration check.
-- `git diff --check`: passed.
-- Node 24.1.0 emits the expected experimental type-stripping warning; it does not perform type checking, so the separate compiler check is required.
-- Hosted checks passed for implementation commit `6ebf026c6388cdbc40592812137b85e878cfb5d1`: https://github.com/GarvitSobti/agentbridge/actions/runs/44051745233. Inspect the pull request for subsequent results. Network, persistence, actual credential authentication, and real assistant integrations have not been tested because they are not implemented.
+- On Node.js 24.1.0 with SQLite 3.49.1, strict source TypeScript checking and 52 behavioral tests pass (34 domain, 18 storage).
+- `npm.cmd ci` passed from the committed lockfile using a writable offline cache; `npm.cmd run check` passed, including 16 Markdown files and 51 local file links. `git diff --check` passed.
+- `npm.cmd run demo:domain` exercises eight synthetic lifecycle transitions; `npm.cmd run demo:storage` verifies a saved accepted request and safe original-create retry after reopening a real database file.
+- CI runs documentation checks, TypeScript, the domain/storage test suite, and both demos. Inspect the storage PR for its latest hosted result.
+- The lockfile pins development tooling and package integrity. Runtime dependencies remain empty.
+- Node 24.1.0 emits expected SQLite and type-stripping warnings. Type stripping is not type checking; the compiler check remains required.
+- Network, actual credential authentication, and real assistant integrations remain untested because they are not implemented. Crash tests simulate a killed writer, not power or hardware failure.
 
 ## Open questions
 
 - Which Claude client (Code, Desktop, or web) and OS will the second participant use? Verify the actual pair before claiming compatibility.
 - Which synthetic CRM fixture best reproduces the original coordination problem without sharing private project code?
 - Final authentication details and credential storage need an implementation ADR before network exposure.
-- MCP SDK and SQLite driver choices are deferred. Domain validation currently has no package dependency; TypeScript 5.9.3 is the single pinned development dependency.
+- MCP SDK choice is deferred. SQLite uses the Node built-in; TypeScript 5.9.3 and @types/node 24.1.0 are pinned development dependencies (undici-types is transitive development tooling).
 - Product name can change. No package-name or trademark availability has been established.
 
 ## Publication
 
-The public repository is https://github.com/GarvitSobti/agentbridge, with the foundation on main. Domain implementation is published on `feat/request-domain` in PR #1: https://github.com/GarvitSobti/agentbridge/pull/1. The local feature branch tracks origin/feat/request-domain. Preserve the original preparation commits on local-foundation; inspect Git history and the PR for published revisions.
+The public repository is https://github.com/GarvitSobti/agentbridge. Domain PR #1 is merged. Storage work belongs on `feat/sqlite-persistence`; review its pull request and hosted checks before merging. Preserve the original preparation commits on local-foundation; inspect Git history for published revisions.
 
 ## Next task
 
-Continue M1: implement a SQLite store that applies domain state, events, and retry receipts in one transaction. Verify restart/reconnect behavior and concurrent writes before adding the loopback relay and two-terminal demonstration. See [the roadmap](docs/ROADMAP.md). Do not expose a network service or claim authenticated human approval before ADR-007 is resolved and implemented.
+Continue M1: build a loopback-only relay using the SQLite adapter and a two-terminal synthetic request/reply workflow. Resolve the local authentication and human/agent capability details in ADR-007 before accepting identity over HTTP. Do not expose a service beyond loopback or claim real assistant integration. MCP connection and the Claude client/OS check follow in M2.

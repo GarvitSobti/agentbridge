@@ -1,6 +1,6 @@
 # Architecture
 
-Status: the transport-independent domain prototype is implemented; relay, persistence, MCP, and human CLI components remain proposed. See [the decisions](DECISIONS.md) for rationale and [the domain guide](DOMAIN.md) for implemented APIs.
+Status: the transport-independent domain and SQLite persistence are implemented; relay, MCP, and human CLI components remain proposed. See [the decisions](DECISIONS.md) for rationale, [the domain guide](DOMAIN.md) for lifecycle APIs, and [the storage guide](STORAGE.md) for transactions and recovery.
 
 ## System shape
 
@@ -38,7 +38,7 @@ flowchart TB
 | MCP adapter | Expose allowed inbox, request, reply, agreement, and completion actions | Agent credential cannot accept work or obtain human credentials |
 | Human CLI | Inspect and accept or decline incoming requests | Distinct human credential, kept out of the assistant's configuration |
 
-Domain language: TypeScript. Runtime: Node.js 24.x. The domain has no package or platform imports; trusted adapters supply IDs, time, and SHA-256 hashing. Tests and the synthetic demo use Node built-ins. SQLite driver compatibility must be verified on the two participants' operating systems.
+Implementation language: TypeScript. Runtime: Node.js 24.x. The domain has no platform imports; trusted adapters supply IDs, time, and SHA-256 hashing. The store uses Node's built-in SQLite, and the runtime helper supplies Node crypto and time defaults. Node type definitions are development tooling. Actual compatibility with the two participants' assistant clients and operating systems must still be verified.
 
 ## Request lifecycle
 
@@ -89,15 +89,19 @@ Current source and planned adapters:
 
 ```text
 src/domain/       Implemented: shared state machine, role rules, and input validation
-tests/            Implemented: behavioral domain tests
-examples/         Implemented: single-process synthetic domain handoff
-src/relay/        Planned: HTTP entry point and SQLite persistence
+src/storage/      Implemented: SQLite transactions, migrations, and persistent state
+src/runtime.ts    Implemented: server-owned IDs, time, and SHA-256 defaults
+tests/            Implemented: domain and real-file SQLite tests
+examples/         Implemented: synthetic domain and storage restart demos
+src/relay/        Planned: loopback HTTP entry point
 src/mcp/          Planned: local assistant-facing adapter
 src/cli/          Planned: human control interface
 ```
 
 Keep one package until separate publishing or deployment needs justify splitting it. Deployment and real assistant compatibility remain unverified.
 
-The reference state is JSON-serializable but currently lives only in the caller's memory. The pure executor returns a complete next-state candidate and never writes it. A future store must apply the read/execute/write operation atomically, including events and retry receipts. Parallel callers cannot independently overwrite each other's snapshots.
+The pure executor returns a complete next-state candidate and never writes it. The SQLite adapter reconstructs that reference state inside a transaction and persists the changed request, one event, one retry receipt, and workspace revision together. `BEGIN IMMEDIATE` serializes writers before they read state; request/workspace revision checks provide additional conflict detection. Read methods use a consistent read transaction.
+
+Requests contain revisioned decisions, messages, and completion reports as JSON. Events and retry receipts have separate tables and uniqueness constraints; workspace configuration and schema metadata are stored explicitly. Versioned migrations are transactional. Local file-backed connections use WAL mode with synchronous FULL. The synchronous adapter and unbounded reference histories are suitable for the small proof of concept, not a claim of high-volume performance. There is no network filesystem or multi-host database support.
 
 Role checks currently operate on a trusted in-process Principal object. Authentication, credential verification, and human credential isolation are not implemented by this library; an API must establish that identity before calling it.

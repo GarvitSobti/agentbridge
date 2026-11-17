@@ -94,6 +94,18 @@ Use statuses Proposed, Accepted, Rejected, and Superseded. Preserve old decision
 - Rationale: The domain has no platform imports and can be type checked without Node type definitions. One pinned development dependency is sufficient; type stripping alone is not type checking.
 - Consequences: There are no runtime package dependencies. The JavaScript tests and demo are executed but not TypeScript-checked. Early Node 24 versions emit a type-stripping warning. Revisit tooling when adapters introduce platform-specific types or publishing requires compiled output.
 
+## ADR-010: Persist commands atomically with Node's built-in SQLite
+
+- Date: 2026-11-17
+- Status: Accepted
+- Context: The merged domain returns an immutable next-state candidate, but requests and retry receipts still need restart durability. Concurrent callers must not save snapshots derived from the same stale state. A native package or ORM is unnecessary for the first two-person relay.
+- Decision: Use Node.js 24.x's built-in DatabaseSync. Before executing a command, acquire BEGIN IMMEDIATE and load current state. Save the changed request, audit event, retry receipt, and workspace revision in one transaction. Use separate workspace/request/event/receipt tables, bound SQL values, foreign keys, and unique retry/event keys; keep decisions and messages inside request JSON. Reads use a consistent read transaction. Use local WAL files, synchronous FULL, and a bounded busy timeout. Add Node type definitions as pinned development tooling.
+- Alternatives: Persist a JSON file; save an entire workspace document as a single SQL row; introduce a third-party SQLite addon, ORM, or remote database; read before acquiring a write transaction.
+- Rationale: This reuses the tested domain while making partial writes and duplicate retries observable at a small, explicit transaction boundary. Separate audit/receipt rows provide uniqueness and inspection without normalizing every nested domain record. Built-in SQLite adds no runtime package dependency or addon build step.
+- Consequences: The synchronous driver blocks the calling event loop while executing or waiting for locks. Database files and WAL/SHM sidecars must stay on a local relay host. Credentials are not implemented by the store, and data is not encrypted. State reconstruction still loads reference histories. Large-history optimization, retention, backups, and distributed deployment remain separate work. Early Node 24 emits an experimental SQLite warning.
+- Verification: Real-file tests exercise reopen, preserved decisions and retries, partial-write rollback, versioned migration failure, concurrent writers, lock timeout recovery, workspace boundaries, and an abruptly killed child writer. The synthetic storage demo closes/reopens a connection and verifies saved state plus safe retry. These checks do not establish behavior under power loss or remote filesystems.
+- Sources: [Node SQLite API](https://nodejs.org/download/release/v24.9.0/docs/api/sqlite.html), [SQLite transactions](https://www.sqlite.org/lang_transaction.html).
+
 ## New ADR template
 
 ```text

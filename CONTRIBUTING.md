@@ -1,6 +1,6 @@
 # Contributing
 
-Agent Bridge has a request domain prototype. The next implementation target is persistent storage and a local relay. Read [the scope](docs/SCOPE.md) and [the current progress](AI_MEMORY.md) before starting.
+Agent Bridge has a persistent request domain prototype. The next implementation target is a loopback relay. Read [the scope](docs/SCOPE.md) and [the current progress](AI_MEMORY.md) before starting.
 
 ## Work on a change
 
@@ -9,13 +9,13 @@ Agent Bridge has a request domain prototype. The next implementation target is p
 3. Explain the problem, resulting behavior, and relevant tradeoffs.
 4. Update public documentation when behavior or setup changes.
 5. Record architectural changes in [the ADR log](docs/DECISIONS.md).
-6. Run `npm run check` from the repository root. Run `npm run demo:domain` when changing the demonstrated lifecycle.
+6. Run `npm run check` from the repository root. Run `npm run demo:domain` or `npm run demo:storage` when changing the demonstrated behavior.
 
-Use Node.js 24.x and run `npm ci` to install the pinned TypeScript compiler. The domain has no runtime package dependencies. A dependency-free documentation-only check is also available: `node scripts/check-repo.mjs`.
+Use Node.js 24.x and run `npm ci` to install the pinned TypeScript compiler and Node type definitions. There are no runtime package dependencies. A dependency-free documentation-only check is also available: `node scripts/check-repo.mjs`.
 
 ## Verification expectations
 
-Documentation changes need working local links and accurate status statements. Domain changes need meaningful tests for the behavior introduced, especially role rules, state transitions, retry handling, and decision revisions. Persistence and network tests must be added with those capabilities. Report what was not run and why.
+Documentation changes need working local links and accurate status statements. Domain changes need meaningful tests for role rules, state transitions, retries, and decision revisions. Storage changes need real SQLite tests for transactions, reopen, errors, and competing writes. Append migrations rather than editing shipped definitions. Network tests must be added with the relay. Report what was not run and why.
 
 Never claim a client is supported before exercising its actual integration. A self-reported completion or generated test summary is not independent verification.
 

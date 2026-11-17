@@ -12,7 +12,7 @@ For architecture changes, also read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 - Follow the user's current instructions and the agreed scope. Resolve routine implementation choices without adding approval gates.
 - Verify the checkout and Git status before editing. Preserve unrelated user changes.
-- The request domain prototype is implemented. The relay, persistence, CLI, MCP adapter, and assistant compatibility remain unimplemented; keep status claims accurate.
+- The request domain and SQLite persistence are implemented. The relay, human CLI, MCP adapter, and assistant compatibility remain unimplemented; keep status claims accurate.
 - Keep initial changes small: one relay, one repository, two participants, explicit inbox checks, and human acceptance of requested work.
 - Use a shared domain layer for state transitions so the future HTTP, MCP, and human interfaces cannot drift.
 - An agent credential must never accept requested work on behalf of a human. Design human acceptance as a distinct server-enforced capability.
@@ -21,7 +21,8 @@ For architecture changes, also read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - Do not claim ownership declarations restrict filesystem access. Enforcement of local edits remains with each developer's assistant environment.
 - Never commit secrets, private transcripts, generated databases, or proprietary source material.
 - Record consequential decisions in docs/DECISIONS.md. Mark proposals, accepted decisions, and superseded decisions accurately.
-- Before finishing, run `npm run check` (documentation, domain TypeScript checks, and behavioral tests) and checks appropriate to any changed behavior. Never report a check as passed unless it ran successfully.
+- Before finishing, run `npm run check` (documentation, source TypeScript checks, and domain/storage tests) and checks appropriate to any changed behavior. Never report a check as passed unless it ran successfully.
+- Keep migrations append-only. Domain changes, audit events, and retry receipts must commit in the same SQLite transaction. Do not introduce remote side effects into that transaction.
 - Update AI_MEMORY.md with verified progress, exact checks, blockers, and one actionable next step. Keep it concise and free of private conversation dumps.
 
 ## Code review rules

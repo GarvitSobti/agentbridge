@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   domain-and-docs:
-    name: Domain and documentation
+    name: Domain, storage, and documentation
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -26,3 +26,5 @@ jobs:
         run: npm run check
       - name: Exercise the synthetic domain handoff
         run: npm run demo:domain
+      - name: Exercise the SQLite restart demonstration
+        run: npm run demo:storage

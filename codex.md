@@ -28,9 +28,12 @@ This file is explicitly referenced by [AGENTS.md](AGENTS.md), the repository ins
 npm ci
 npm run check
 npm run demo:domain
+npm run demo:storage
 ```
 
-`npm run check` runs `check:docs`, `typecheck`, and `test`. The domain source is type checked; JavaScript tests and the demo run directly in Node. The synthetic demo exercises a single-process handoff. It does not authenticate humans, connect real agents, use a network, or persist state. No application build or verified assistant setup exists yet.
+`npm run check` runs `check:docs`, `typecheck`, and `test`. Domain, runtime helpers, and storage TypeScript source are checked; JavaScript tests and demos run directly in Node. The domain demo exercises a single-process handoff. The storage demo closes/reopens a local SQLite file and verifies a safe retry. Neither authenticates humans, connects real agents, or uses a network. No application build or verified assistant setup exists yet.
+
+`tests/storage.test.mjs` uses real temporary files, independent writer threads, a killed child process, and SQL failure injection. Keep those tests meaningful; do not replace them with mocks of the storage behavior. Store details and limitations are in [docs/STORAGE.md](docs/STORAGE.md).
 
 The documentation-only checker remains available without installed dependencies: `node scripts/check-repo.mjs`. On Windows, use `npm.cmd` if PowerShell blocks `npm.ps1`.
 

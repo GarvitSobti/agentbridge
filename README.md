@@ -4,7 +4,7 @@
 
 Request work from a teammate's agent, record the decisions you agree on, and hand back a specific result while each developer stays in control of their own machine.
 
-**Status: domain prototype.** Request lifecycle rules, role checks, revisioned decisions, retry handling, and a synthetic handoff demo are implemented. The relay, database, MCP adapter, and human approval interface are not implemented yet. There is no published package or verified assistant integration. The working name is Agent Bridge.
+**Status: persistent domain prototype.** Request lifecycle rules, role checks, revisioned decisions, retry handling, and SQLite persistence are implemented, with synthetic handoff and restart demos. The relay, MCP adapter, and human approval interface are not implemented yet. There is no published package or verified assistant integration. The working name is Agent Bridge.
 
 [Scope](docs/SCOPE.md) · [Architecture](docs/ARCHITECTURE.md) · [Decisions](docs/DECISIONS.md) · [Roadmap](docs/ROADMAP.md) · [Contributing](CONTRIBUTING.md)
 
@@ -61,7 +61,7 @@ Existing projects already overlap with this idea. [CodeRelay](https://github.com
 
 ## Get started today
 
-At this stage you can run the domain tests and a synthetic handoff, inspect the design, and contribute. You cannot start a relay yet.
+At this stage you can run the tests and synthetic handoff/restart demos, inspect the design, and contribute. You cannot start a relay yet.
 
 Prerequisites: Git and Node.js 24.x.
 
@@ -78,15 +78,16 @@ Run the single-process demonstration:
 
 ```sh
 npm run demo:domain
+npm run demo:storage
 ```
 
-The demo prints a request, clarification, decision agreement, human-role acceptance, agent-role start, and completion report. Participants are simulated; no real agents connect, no code is edited, and the example commit ID is a fixture.
+The domain demo prints a request, clarification, decision agreement, human-role acceptance, agent-role start, and completion report. The storage demo saves and accepts a synthetic request, closes and reopens its database connection, and verifies safe retry and inbox catch-up. Participants are simulated; no real agents connect, no code is edited, and the example commit ID is a fixture. Storage demo data stays in the Git-ignored `.agent-bridge/` directory.
 
-There are no runtime package dependencies. TypeScript is a pinned development dependency for strict checking of the domain source. Tests and the demo use Node's built-in TypeScript execution and test runner; early Node 24 releases may print a type-stripping warning. On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`.
+There are no runtime package dependencies. TypeScript and Node type definitions are pinned development dependencies for strict checking of the source. Tests and demos use Node's built-in TypeScript execution, SQLite, and test runner; early Node 24 releases print experimental warnings. On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`.
 
-`npm run check` runs documentation checks, TypeScript checking, and behavioral domain tests. These are not network, persistence, or assistant-integration tests. For a dependency-free documentation-only check, use `node scripts/check-repo.mjs`. Relay and MCP setup commands will be added when those components exist and have been exercised.
+`npm run check` runs documentation checks, TypeScript checking, and domain/storage tests, including independent SQLite writers and a killed writer process. These are not network or assistant-integration tests. For a dependency-free documentation-only check, use `node scripts/check-repo.mjs`. Relay and MCP setup commands will be added when those components exist and have been exercised.
 
-See the [domain API guide](docs/DOMAIN.md) for the implemented commands, role matrix, and storage contract.
+See the [domain API guide](docs/DOMAIN.md) for commands and role rules, and the [storage guide](docs/STORAGE.md) for transactions, migrations, and recovery behavior.
 
 ## First proof of concept
 
@@ -117,6 +118,7 @@ No pilot results are available yet. See the [validation plan](docs/VALIDATION.md
 | [Scope](docs/SCOPE.md) | Product boundaries and acceptance criteria |
 | [Architecture](docs/ARCHITECTURE.md) | Components, data flow, and trust boundaries |
 | [Domain API](docs/DOMAIN.md) | Implemented lifecycle rules, inputs, and limitations |
+| [Storage](docs/STORAGE.md) | SQLite setup, transactions, migrations, and failure behavior |
 | [Decisions](docs/DECISIONS.md) | Architecture decisions and their rationale |
 | [Roadmap](docs/ROADMAP.md) | Small implementation milestones and exit criteria |
 | [Security](SECURITY.md) | Data handling expectations and reporting guidance |

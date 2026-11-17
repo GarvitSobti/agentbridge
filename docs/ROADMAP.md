@@ -16,10 +16,11 @@ Exit: documentation checks pass, the initial commit exists, and its files can be
 
 ## M1: Domain rules and two-terminal relay
 
-- [ ] Define payload types, limits, errors, IDs, timestamps, and versions.
-- [ ] Implement request lifecycle and role-based authorization in a shared domain layer.
-- [ ] Test human-only acceptance, recipient validation, stale versions, retries, and terminal states.
-- [ ] Define decision revisions and invalidate stale acknowledgments.
+- [x] Define payload types, limits, errors, IDs, timestamps, and versions.
+- [x] Implement request lifecycle and role rules in a shared domain layer (credential authentication remains a relay responsibility).
+- [x] Test human-role acceptance, recipient validation, stale versions, retries, and terminal states.
+- [x] Define decision revisions and invalidate stale acknowledgments.
+- [x] Add a single-process synthetic domain handoff demo.
 - [ ] Add SQLite persistence with migrations, transactional event recording, and restart tests.
 - [ ] Add a loopback-only relay and two terminal clients for a synthetic request/reply scenario.
 

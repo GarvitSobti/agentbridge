@@ -1,6 +1,6 @@
 # Architecture
 
-Status: proposed implementation design. Product boundaries are accepted; application components do not exist yet. See [the decisions](DECISIONS.md) for rationale.
+Status: the transport-independent domain prototype is implemented; relay, persistence, MCP, and human CLI components remain proposed. See [the decisions](DECISIONS.md) for rationale and [the domain guide](DOMAIN.md) for implemented APIs.
 
 ## System shape
 
@@ -38,7 +38,7 @@ flowchart TB
 | MCP adapter | Expose allowed inbox, request, reply, agreement, and completion actions | Agent credential cannot accept work or obtain human credentials |
 | Human CLI | Inspect and accept or decline incoming requests | Distinct human credential, kept out of the assistant's configuration |
 
-Planned language: TypeScript. Runtime: Node.js 24.x. Choose and document concrete libraries at implementation time. SQLite driver compatibility must be verified on the two participants' operating systems.
+Domain language: TypeScript. Runtime: Node.js 24.x. The domain has no package or platform imports; trusted adapters supply IDs, time, and SHA-256 hashing. Tests and the synthetic demo use Node built-ins. SQLite driver compatibility must be verified on the two participants' operating systems.
 
 ## Request lifecycle
 
@@ -52,7 +52,7 @@ pending --addressed human accepts--> accepted --assigned agent starts--> in_prog
 accepted or in_progress --either participating human cancels--> cancelled
 ```
 
-Terminal states are completed, declined, and cancelled. Further work uses a new request referencing the old one. Messages are allowed on a request without implicitly changing its lifecycle state.
+Terminal states are completed, declined, and cancelled. Further work uses a new request referencing the old one. Active requests allow messages without implicitly changing their lifecycle state; terminal requests are read-only. Exact retries of earlier successful commands still return their original result without modifying current state.
 
 Decisions are a separate revisioned record. Each participant's human or scoped agent may acknowledge an exact decision revision; this never substitutes for human task acceptance. Starting work requires all decision references attached to the request to have both participants' agreement on their current revision. A new revision clears current agreement and blocks further progress/completion transitions until re-agreed. It cannot automatically stop code already running locally; the agent learns of the change on its next inbox check.
 
@@ -85,15 +85,19 @@ Peer messages may contain misleading instructions. Display sender identity, role
 
 ## Proposed source layout
 
-These directories are a plan, not implemented packages:
+Current source and planned adapters:
 
 ```text
-src/domain/       Shared state machine and authorization rules
-src/relay/        HTTP entry point and SQLite persistence
-src/mcp/          Local assistant-facing adapter
-src/cli/          Human control interface
-tests/            Domain and integration scenarios
-examples/         Synthetic two-person fixture
+src/domain/       Implemented: shared state machine, role rules, and input validation
+tests/            Implemented: behavioral domain tests
+examples/         Implemented: single-process synthetic domain handoff
+src/relay/        Planned: HTTP entry point and SQLite persistence
+src/mcp/          Planned: local assistant-facing adapter
+src/cli/          Planned: human control interface
 ```
 
 Keep one package until separate publishing or deployment needs justify splitting it. Deployment and real assistant compatibility remain unverified.
+
+The reference state is JSON-serializable but currently lives only in the caller's memory. The pure executor returns a complete next-state candidate and never writes it. A future store must apply the read/execute/write operation atomically, including events and retry receipts. Parallel callers cannot independently overwrite each other's snapshots.
+
+Role checks currently operate on a trusted in-process Principal object. Authentication, credential verification, and human credential isolation are not implemented by this library; an API must establish that identity before calling it.

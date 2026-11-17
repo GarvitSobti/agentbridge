@@ -74,6 +74,26 @@ Use statuses Proposed, Accepted, Rejected, and Superseded. Preserve old decision
 - Open questions: Initial provisioning, human credential storage, token rotation, revocation, backup handling, and hosting platform.
 - Acceptance condition: Document the chosen flow, test role and workspace isolation, and verify that agent configuration and logs do not contain human credentials before cross-machine exposure.
 
+## ADR-008: Start with a pure, transport-independent request domain
+
+- Date: 2026-11-17
+- Status: Accepted
+- Context: The relay, human CLI, and MCP adapter must enforce the same lifecycle and role rules. Testing those rules should not require a server, database, or live assistant.
+- Decision: Implement a pure command executor returning a complete next-state candidate and a result. Inject server-owned IDs, time, and SHA-256 hashing. Keep identity separate from command payloads. Retain decision revisions, structured events, and retry receipts in JSON-serializable reference state.
+- Alternatives: Implement rules directly in HTTP handlers; have the domain authenticate credentials; add SQLite and transport details before validating behavior.
+- Rationale: The small core can be checked exhaustively for the first workflow and reused by future adapters. Explicit inputs and no external effects make failure and retry behavior inspectable.
+- Consequences: The in-memory reference model is not durable or an authenticated service. Its future store must commit state, events, and retry receipts atomically. Domain callers are trusted server code. Terminal requests are read-only; further work uses a new request. Successful retries return the original result without regressing current state.
+
+## ADR-009: Use Node's test runner and pinned TypeScript checking
+
+- Date: 2026-11-17
+- Status: Accepted
+- Context: The initial domain needs executable tests and type checking without a runtime framework or build pipeline.
+- Decision: Use erasable TypeScript for the domain, strict no-emit checking with TypeScript 5.9.3, Node.js 24.x's TypeScript execution, and node:test. Tests and the synthetic demo are JavaScript modules using Node built-ins. Commit the package lockfile; use npm ci in CI.
+- Alternatives: Add a transpiler, test framework, runtime schema library, or platform type packages before they are needed.
+- Rationale: The domain has no platform imports and can be type checked without Node type definitions. One pinned development dependency is sufficient; type stripping alone is not type checking.
+- Consequences: There are no runtime package dependencies. The JavaScript tests and demo are executed but not TypeScript-checked. Early Node 24 versions emit a type-stripping warning. Revisit tooling when adapters introduce platform-specific types or publishing requires compiled output.
+
 ## New ADR template
 
 ```text

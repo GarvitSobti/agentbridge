@@ -4,7 +4,7 @@
 
 Request work from a teammate's agent, record the decisions you agree on, and hand back a specific result while each developer stays in control of their own machine.
 
-**Status: documentation foundation.** The relay, MCP adapter, and approval interface are planned, not implemented. There is no runnable coordination service, published package, or verified assistant integration yet. The working name is Agent Bridge.
+**Status: domain prototype.** Request lifecycle rules, role checks, revisioned decisions, retry handling, and a synthetic handoff demo are implemented. The relay, database, MCP adapter, and human approval interface are not implemented yet. There is no published package or verified assistant integration. The working name is Agent Bridge.
 
 [Scope](docs/SCOPE.md) · [Architecture](docs/ARCHITECTURE.md) · [Decisions](docs/DECISIONS.md) · [Roadmap](docs/ROADMAP.md) · [Contributing](CONTRIBUTING.md)
 
@@ -61,27 +61,32 @@ Existing projects already overlap with this idea. [CodeRelay](https://github.com
 
 ## Get started today
 
-At this stage you can inspect the design, contribute, and run the repository checks. You cannot start a relay yet.
+At this stage you can run the domain tests and a synthetic handoff, inspect the design, and contribute. You cannot start a relay yet.
 
 Prerequisites: Git and Node.js 24.x.
 
-Clone the repository and check the documentation foundation:
+Clone the repository, install the pinned development tooling, and run the checks:
 
 ```sh
 git clone https://github.com/GarvitSobti/agentbridge.git
 cd agentbridge
-node scripts/check-repo.mjs
-```
-
-Or use the equivalent npm script:
-
-```sh
+npm ci
 npm run check
 ```
 
-There are no package dependencies to install. On Windows PowerShell, use `npm.cmd run check` if execution policy blocks `npm.ps1`.
+Run the single-process demonstration:
 
-These checks validate the documentation foundation, local file links, and configuration. They are not runtime or agent-integration tests. Setup commands for the relay and MCP adapter will be added when those components exist and have been exercised.
+```sh
+npm run demo:domain
+```
+
+The demo prints a request, clarification, decision agreement, human-role acceptance, agent-role start, and completion report. Participants are simulated; no real agents connect, no code is edited, and the example commit ID is a fixture.
+
+There are no runtime package dependencies. TypeScript is a pinned development dependency for strict checking of the domain source. Tests and the demo use Node's built-in TypeScript execution and test runner; early Node 24 releases may print a type-stripping warning. On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`.
+
+`npm run check` runs documentation checks, TypeScript checking, and behavioral domain tests. These are not network, persistence, or assistant-integration tests. For a dependency-free documentation-only check, use `node scripts/check-repo.mjs`. Relay and MCP setup commands will be added when those components exist and have been exercised.
+
+See the [domain API guide](docs/DOMAIN.md) for the implemented commands, role matrix, and storage contract.
 
 ## First proof of concept
 
@@ -111,6 +116,7 @@ No pilot results are available yet. See the [validation plan](docs/VALIDATION.md
 | [AI_MEMORY.md](AI_MEMORY.md) | Current progress, open questions, and the next concrete task |
 | [Scope](docs/SCOPE.md) | Product boundaries and acceptance criteria |
 | [Architecture](docs/ARCHITECTURE.md) | Components, data flow, and trust boundaries |
+| [Domain API](docs/DOMAIN.md) | Implemented lifecycle rules, inputs, and limitations |
 | [Decisions](docs/DECISIONS.md) | Architecture decisions and their rationale |
 | [Roadmap](docs/ROADMAP.md) | Small implementation milestones and exit criteria |
 | [Security](SECURITY.md) | Data handling expectations and reporting guidance |

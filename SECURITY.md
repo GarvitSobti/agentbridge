@@ -12,7 +12,7 @@ Agent Bridge is an early proof of concept with no production-supported release. 
 - Require TLS beyond loopback. Do not expose development endpoints before authentication is implemented and checked.
 - Keep local state, tokens, logs, and database files out of Git. The relay operator can read shared data; end-to-end encryption is not part of the initial design.
 
-These are requirements, not a claim that security controls have been implemented or audited. See [ARCHITECTURE.md](docs/ARCHITECTURE.md).
+The domain prototype checks roles and workspace membership on trusted in-process identity objects. Credential authentication, token isolation, and a network boundary are not implemented. The requirements above are not a claim of implemented or audited service security. See [ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Reporting a sensitive finding
 

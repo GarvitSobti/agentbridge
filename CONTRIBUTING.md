@@ -1,6 +1,6 @@
 # Contributing
 
-Agent Bridge is at the documentation-foundation stage. The first implementation target is a small two-person coordination workflow. Read [the scope](docs/SCOPE.md) and [the current progress](AI_MEMORY.md) before starting.
+Agent Bridge has a request domain prototype. The next implementation target is persistent storage and a local relay. Read [the scope](docs/SCOPE.md) and [the current progress](AI_MEMORY.md) before starting.
 
 ## Work on a change
 
@@ -9,13 +9,13 @@ Agent Bridge is at the documentation-foundation stage. The first implementation 
 3. Explain the problem, resulting behavior, and relevant tradeoffs.
 4. Update public documentation when behavior or setup changes.
 5. Record architectural changes in [the ADR log](docs/DECISIONS.md).
-6. Run `node scripts/check-repo.mjs` from the repository root.
+6. Run `npm run check` from the repository root. Run `npm run demo:domain` when changing the demonstrated lifecycle.
 
-No dependency installation is needed for the current check. Application build and runtime test commands will be documented when implemented. Use Node.js 24.x.
+Use Node.js 24.x and run `npm ci` to install the pinned TypeScript compiler. The domain has no runtime package dependencies. A dependency-free documentation-only check is also available: `node scripts/check-repo.mjs`.
 
 ## Verification expectations
 
-Documentation changes need working local links and accurate status statements. Runtime changes will need meaningful tests for the behavior introduced, especially permissions, state transitions, retry handling, decision revisions, and persistence. Report what was not run and why.
+Documentation changes need working local links and accurate status statements. Domain changes need meaningful tests for the behavior introduced, especially role rules, state transitions, retry handling, and decision revisions. Persistence and network tests must be added with those capabilities. Report what was not run and why.
 
 Never claim a client is supported before exercising its actual integration. A self-reported completion or generated test summary is not independent verification.
 

@@ -1,10 +1,10 @@
 # Project memory
 
-Last updated: 2026-11-16
+Last updated: 2026-11-17
 
 ## Current position
 
-Milestone M0: documentation and repository foundation. Runtime implementation has not started. No end-to-end agent integration or pilot outcome has been verified.
+Milestone M0 is complete: documentation and repository foundation are published and verified on GitHub. Runtime implementation has not started. No end-to-end agent integration or pilot outcome has been verified.
 
 Working name: Agent Bridge. Repository: `GarvitSobti/agentbridge`. Owner: Garvit Sobti. License: MIT, included in LICENSE. The unpublished package uses the name `agent-bridge`.
 
@@ -33,7 +33,9 @@ Working name: Agent Bridge. Repository: `GarvitSobti/agentbridge`. Owner: Garvit
 - `node --check scripts/check-repo.mjs`: passed.
 - `npm.cmd run check`: passed on Windows using Node.js 24.1.0.
 - `git check-ignore`: confirmed environment files, local credentials directory, SQLite state, dependencies, and generated output are excluded.
-- GitHub-hosted CI has not run. External URLs, Markdown anchors, and runtime/assistant integrations have not been validated by the repository checker.
+- All 22 published file blob hashes match the prepared foundation.
+- GitHub-hosted repository checks passed for foundation commit `89c42224f61377908507650b35bdf2d8eb3e11f2`: https://github.com/GarvitSobti/agentbridge/actions/runs/43910852912.
+- External URLs, Markdown anchors, and runtime/assistant integrations have not been validated by the repository checker. For later CI results, inspect GitHub Actions.
 
 ## Open questions
 
@@ -45,7 +47,7 @@ Working name: Agent Bridge. Repository: `GarvitSobti/agentbridge`. Owner: Garvit
 
 ## Publication
 
-The public repository is https://github.com/GarvitSobti/agentbridge. Repository access is authorized, and the initial MIT license commit is published. The full documentation upload and remote file verification are in progress. Local foundation checks pass; hosted CI remains pending.
+The public repository is https://github.com/GarvitSobti/agentbridge, with the foundation on main. Repository access is authorized. The local checkout tracks origin/main and preserves its original preparation commits on local-foundation. Inspect `git log -1` for the current revision.
 
 ## Next task
 

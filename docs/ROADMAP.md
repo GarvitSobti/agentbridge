@@ -10,7 +10,7 @@ Complete small vertical slices. The checkboxes below describe current delivery s
 - [x] Define a repository check and GitHub Actions workflow.
 - [x] Run the local foundation checks.
 - [x] Commit the foundation.
-- [ ] Publish and verify the repository on GitHub.
+- [x] Publish and verify the repository on GitHub.
 
 Exit: documentation checks pass, the initial commit exists, and its files can be inspected on GitHub. A local pass does not establish a passing hosted CI run.
 

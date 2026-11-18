@@ -1,10 +1,10 @@
 # Architecture
 
-Status: the transport-independent domain and SQLite persistence are implemented; relay, MCP, and human CLI components remain proposed. See [the decisions](DECISIONS.md) for rationale, [the domain guide](DOMAIN.md) for lifecycle APIs, and [the storage guide](STORAGE.md) for transactions and recovery.
+Status: domain, SQLite persistence, loopback relay, and terminal clients are implemented. MCP and cross-machine operation remain proposed. See [the decisions](DECISIONS.md), [domain guide](DOMAIN.md), [storage guide](STORAGE.md), and [local run guide](LOCAL_RELAY.md).
 
 ## System shape
 
-One relay service and database serve a two-person workspace. Each machine runs a local MCP adapter for its assistant and a human terminal interface. Both interfaces call the same relay and shared domain rules.
+The current local demo has one loopback relay, one database, and terminal clients for two participants on the same machine. The diagram below is the target cross-machine architecture: local MCP adapters and the remote deployment boundary are still future work. Terminal and eventual assistant interfaces share the same domain rules.
 
 ```mermaid
 flowchart TB
@@ -79,7 +79,7 @@ The adapter explicitly requests events after its last cursor and deduplicates by
 
 The relay operator and database are trusted with deliberately shared messages; end-to-end encryption is outside this first design. TLS is required for access beyond loopback. Never expose an unauthenticated development server to the internet.
 
-Separate human and agent credentials are a server-side capability boundary, not protection from a fully compromised laptop. The human credential must not be passed to the MCP adapter, tool arguments, prompts, or logs. Provisioning, rotation, and local storage details need a dedicated implementation ADR before network testing.
+Separate human and agent credentials are a server-side capability boundary, not protection from a fully privileged process on the relay host. The human credential must not be passed to an MCP adapter, tool arguments, prompts, or logs. ADR-011 implements local provisioning, private profile storage, and revocation. Remote provisioning and TLS remain open under ADR-007.
 
 Peer messages may contain misleading instructions. Display sender identity, role, and references; treat the content as untrusted input. The relay must never interpret message text as an executable command. Declared ownership is coordination metadata, not a filesystem sandbox.
 
@@ -91,11 +91,11 @@ Current source and planned adapters:
 src/domain/       Implemented: shared state machine, role rules, and input validation
 src/storage/      Implemented: SQLite transactions, migrations, and persistent state
 src/runtime.ts    Implemented: server-owned IDs, time, and SHA-256 defaults
-tests/            Implemented: domain and real-file SQLite tests
+src/relay/        Implemented: authenticated loopback HTTP entry point
+src/cli/          Implemented: local bootstrap, operator actions, and terminal client
+tests/            Implemented: domain, SQLite, actual HTTP, and CLI process tests
 examples/         Implemented: synthetic domain and storage restart demos
-src/relay/        Planned: loopback HTTP entry point
 src/mcp/          Planned: local assistant-facing adapter
-src/cli/          Planned: human control interface
 ```
 
 Keep one package until separate publishing or deployment needs justify splitting it. Deployment and real assistant compatibility remain unverified.
@@ -104,4 +104,6 @@ The pure executor returns a complete next-state candidate and never writes it. T
 
 Requests contain revisioned decisions, messages, and completion reports as JSON. Events and retry receipts have separate tables and uniqueness constraints; workspace configuration and schema metadata are stored explicitly. Versioned migrations are transactional. Local file-backed connections use WAL mode with synchronous FULL. The synchronous adapter and unbounded reference histories are suitable for the small proof of concept, not a claim of high-volume performance. There is no network filesystem or multi-host database support.
 
-Role checks currently operate on a trusted in-process Principal object. Authentication, credential verification, and human credential isolation are not implemented by this library; an API must establish that identity before calling it.
+The domain/store APIs still take trusted in-process Principal objects. The HTTP adapter establishes those identities by hashing the bearer token and querying the scoped, non-revoked credential registry. It rechecks after reading a command body. Client-supplied role fields and profile metadata cannot change the server-derived role.
+
+Credential profiles are initialized outside the checkout under ~/.agentbridge/local-demo by default; human and agent files are separate, and the SQLite table stores only token hashes and metadata. The operator's filesystem remains trusted. The client refuses remote URLs and redirects; the server binds only IPv4 loopback, rejects browser Origin/other Host values, and applies explicit input/resource limits. It has no credential administration or shell-execution HTTP route.

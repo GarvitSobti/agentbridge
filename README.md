@@ -4,7 +4,7 @@
 
 Request work from a teammate's agent, record the decisions you agree on, and hand back a specific result while each developer stays in control of their own machine.
 
-**Status: persistent domain prototype.** Request lifecycle rules, role checks, revisioned decisions, retry handling, and SQLite persistence are implemented, with synthetic handoff and restart demos. The relay, MCP adapter, and human approval interface are not implemented yet. There is no published package or verified assistant integration. The working name is Agent Bridge.
+**Status: local relay prototype.** An authenticated loopback HTTP relay and terminal clients now use the persistent request domain. Separate human and agent profiles enforce task approval roles. Real Codex/Claude connections and cross-machine access are not implemented yet. There is no published package or verified assistant integration. The working name is Agent Bridge.
 
 [Scope](docs/SCOPE.md) · [Architecture](docs/ARCHITECTURE.md) · [Decisions](docs/DECISIONS.md) · [Roadmap](docs/ROADMAP.md) · [Contributing](CONTRIBUTING.md)
 
@@ -51,7 +51,7 @@ flowchart LR
 
 The relay is a mailbox and record keeper. It does not run a model, edit repositories, execute shell commands, or merge code. Reasoning and code changes stay with the developers' existing assistants.
 
-The coordinator is planned in TypeScript with SQLite storage. It will not require its own model API key; assistant access and eventual hosting are separate requirements.
+The coordinator uses TypeScript and SQLite storage. It requires no model API key; local bearer credentials are generated during setup. Assistant access and eventual hosting are separate requirements.
 
 ## What this adds to Git workflows
 
@@ -61,7 +61,7 @@ Existing projects already overlap with this idea. [CodeRelay](https://github.com
 
 ## Get started today
 
-At this stage you can run the tests and synthetic handoff/restart demos, inspect the design, and contribute. You cannot start a relay yet.
+You can run a local relay and exchange requests through separate terminal clients, or run the tests and synthetic demos. Alice and Bob are local demo identities; actual coding assistants are not connected yet.
 
 Prerequisites: Git and Node.js 24.x.
 
@@ -74,6 +74,27 @@ npm ci
 npm run check
 ```
 
+Start the local workspace and relay in one terminal:
+
+```sh
+npm run relay:init
+npm run relay
+```
+
+In another terminal, create a request:
+
+```sh
+npm run bridge -- --profile alice-agent request --to bob --title "Expose severity" --body "Please add a severity field."
+```
+
+In a third terminal, inspect Bob's inbox:
+
+```sh
+npm run bridge -- --profile bob-agent inbox
+```
+
+Follow the [local relay guide](docs/LOCAL_RELAY.md) for the complete PowerShell flow: reply, approve with Bob's human profile, start with Bob's agent profile, and verify restart/catch-up. The relay listens on `127.0.0.1:8787`; credentials and its database are stored outside the checkout under `~/.agentbridge/local-demo`.
+
 Run the single-process demonstration:
 
 ```sh
@@ -85,7 +106,7 @@ The domain demo prints a request, clarification, decision agreement, human-role 
 
 There are no runtime package dependencies. TypeScript and Node type definitions are pinned development dependencies for strict checking of the source. Tests and demos use Node's built-in TypeScript execution, SQLite, and test runner; early Node 24 releases print experimental warnings. On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`.
 
-`npm run check` runs documentation checks, TypeScript checking, and domain/storage tests, including independent SQLite writers and a killed writer process. These are not network or assistant-integration tests. For a dependency-free documentation-only check, use `node scripts/check-repo.mjs`. Relay and MCP setup commands will be added when those components exist and have been exercised.
+`npm run check` runs documentation checks, TypeScript checking, and domain/storage/HTTP/CLI tests. Tests include independent SQLite writers, a killed writer process, actual loopback connections, and separate client/relay processes. These are not real-assistant integration tests. For a dependency-free documentation-only check, use `node scripts/check-repo.mjs`.
 
 See the [domain API guide](docs/DOMAIN.md) for commands and role rules, and the [storage guide](docs/STORAGE.md) for transactions, migrations, and recovery behavior.
 
@@ -119,6 +140,7 @@ No pilot results are available yet. See the [validation plan](docs/VALIDATION.md
 | [Architecture](docs/ARCHITECTURE.md) | Components, data flow, and trust boundaries |
 | [Domain API](docs/DOMAIN.md) | Implemented lifecycle rules, inputs, and limitations |
 | [Storage](docs/STORAGE.md) | SQLite setup, transactions, migrations, and failure behavior |
+| [Local relay](docs/LOCAL_RELAY.md) | Setup, terminal workflow, credentials, and HTTP contract |
 | [Decisions](docs/DECISIONS.md) | Architecture decisions and their rationale |
 | [Roadmap](docs/ROADMAP.md) | Small implementation milestones and exit criteria |
 | [Security](SECURITY.md) | Data handling expectations and reporting guidance |

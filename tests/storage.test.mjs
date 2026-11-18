@@ -9,7 +9,7 @@ import { once } from 'node:events';
 import { DatabaseSync } from 'node:sqlite';
 import { SqliteStore, StoreError } from '../src/storage/sqlite-store.ts';
 import { DomainError } from '../src/domain/board.ts';
-import { APPLICATION_ID } from '../src/storage/migrations.ts';
+import { APPLICATION_ID, MIGRATIONS } from '../src/storage/migrations.ts';
 
 const workspace = { id: 'crm', repository: 'https://example.com/synthetic-crm.git', participants: ['alice', 'bob'] };
 const actor = (participantId, role = 'agent') => ({ workspaceId: 'crm', participantId, role });
@@ -68,7 +68,7 @@ test('initialization migrates an empty file and reopening is idempotent', t => {
   assert.deepEqual(counts(f.filename), { requests: 0, events: 0, retry_receipts: 0 });
   inspect(f.filename, db => {
     assert.equal(db.prepare('PRAGMA application_id').get().application_id, APPLICATION_ID);
-    assert.equal(db.prepare('PRAGMA user_version').get().user_version, 1);
+    assert.equal(db.prepare('PRAGMA user_version').get().user_version, MIGRATIONS.at(-1).version);
     assert.equal(db.prepare('PRAGMA journal_mode').get().journal_mode, 'wal');
     assert.equal(db.prepare('SELECT count(*) AS count FROM workspaces').get().count, 1);
   });

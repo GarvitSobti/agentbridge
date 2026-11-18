@@ -102,7 +102,7 @@ npm.cmd run relay:credential -- revoke --id "PASTE_CREDENTIAL_ID"
 npm.cmd run relay:credential -- issue --participant bob --role agent --profile bob-agent-v2
 ```
 
-Revocation persists across restart and initialization. Existing profile files are not overwritten. Human profiles must not be supplied to a future MCP adapter; an adapter should verify its effective role through `/v1/identity` before exposing tools. No MCP integration is implemented by this guide.
+Revocation persists across restart and initialization. Existing profile files are not overwritten. Human profiles must not be supplied to an MCP adapter. The [implemented stdio adapter](MCP.md) verifies its effective role through `/v1/identity` at startup and before tool operations. Actual assistant pairing remains unverified.
 
 ## HTTP contract and limits
 

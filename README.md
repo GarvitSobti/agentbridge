@@ -4,7 +4,7 @@
 
 Request work from a teammate's agent, record the decisions you agree on, and hand back a specific result while each developer stays in control of their own machine.
 
-**Status: local relay prototype.** An authenticated loopback HTTP relay and terminal clients now use the persistent request domain. Separate human and agent profiles enforce task approval roles. Real Codex/Claude connections and cross-machine access are not implemented yet. There is no published package or verified assistant integration. The working name is Agent Bridge.
+**Status: local relay and MCP prototype.** A persistent authenticated relay serves terminal clients and a stdio MCP adapter with ten agent-scoped tools. Separate human and agent profiles enforce task approval roles. Official SDK protocol tests pass; a real Codex/Claude handoff and cross-machine access remain unverified. There is no published package. The working name is Agent Bridge.
 
 [Scope](docs/SCOPE.md) · [Architecture](docs/ARCHITECTURE.md) · [Decisions](docs/DECISIONS.md) · [Roadmap](docs/ROADMAP.md) · [Contributing](CONTRIBUTING.md)
 
@@ -61,11 +61,11 @@ Existing projects already overlap with this idea. [CodeRelay](https://github.com
 
 ## Get started today
 
-You can run a local relay and exchange requests through separate terminal clients, or run the tests and synthetic demos. Alice and Bob are local demo identities; actual coding assistants are not connected yet.
+You can exchange requests through terminal clients or connect a local MCP host using an agent profile. Alice and Bob are local demo identities. The protocol is tested with official SDK clients; actual assistant pairing is the next integration check.
 
 Prerequisites: Git and Node.js 24.x.
 
-Clone the repository, install the pinned development tooling, and run the checks:
+Clone the repository, install the pinned dependencies, and run the checks:
 
 ```sh
 git clone https://github.com/GarvitSobti/agentbridge.git
@@ -104,9 +104,11 @@ npm run demo:storage
 
 The domain demo prints a request, clarification, decision agreement, human-role acceptance, agent-role start, and completion report. The storage demo saves and accepts a synthetic request, closes and reopens its database connection, and verifies safe retry and inbox catch-up. Participants are simulated; no real agents connect, no code is edited, and the example commit ID is a fixture. Storage demo data stays in the Git-ignored `.agent-bridge/` directory.
 
-There are no runtime package dependencies. TypeScript and Node type definitions are pinned development dependencies for strict checking of the source. Tests and demos use Node's built-in TypeScript execution, SQLite, and test runner; early Node 24 releases print experimental warnings. On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`.
+The MCP adapter uses the official `@modelcontextprotocol/server` SDK and Zod; protocol tests use the matching client SDK. TypeScript and Node type definitions provide strict source checking. SQLite, TypeScript execution, and the test runner use Node's built-ins; early Node 24 releases print experimental warnings. On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`.
 
-`npm run check` runs documentation checks, TypeScript checking, and domain/storage/HTTP/CLI tests. Tests include independent SQLite writers, a killed writer process, actual loopback connections, and separate client/relay processes. These are not real-assistant integration tests. For a dependency-free documentation-only check, use `node scripts/check-repo.mjs`.
+`npm run check` runs documentation checks, strict TypeScript checking, and domain/storage/HTTP/CLI/MCP tests. Tests include independent SQLite writers, a killed writer process, actual loopback connections, and separate stdio adapter processes driven by official SDK clients. These are not real-assistant integration tests. For a dependency-free documentation-only check, use `node scripts/check-repo.mjs`.
+
+To connect a local assistant host, follow the [MCP setup guide](docs/MCP.md). Launch the adapter with Node directly and select an agent profile explicitly. Human acceptance stays in the terminal. This setup currently uses one machine; two-laptop access needs later TLS and provisioning work.
 
 See the [domain API guide](docs/DOMAIN.md) for commands and role rules, and the [storage guide](docs/STORAGE.md) for transactions, migrations, and recovery behavior.
 
@@ -141,6 +143,7 @@ No pilot results are available yet. See the [validation plan](docs/VALIDATION.md
 | [Domain API](docs/DOMAIN.md) | Implemented lifecycle rules, inputs, and limitations |
 | [Storage](docs/STORAGE.md) | SQLite setup, transactions, migrations, and failure behavior |
 | [Local relay](docs/LOCAL_RELAY.md) | Setup, terminal workflow, credentials, and HTTP contract |
+| [MCP adapter](docs/MCP.md) | Stdio setup, agent tools, retry rules, and protocol verification |
 | [Decisions](docs/DECISIONS.md) | Architecture decisions and their rationale |
 | [Roadmap](docs/ROADMAP.md) | Small implementation milestones and exit criteria |
 | [Security](SECURITY.md) | Data handling expectations and reporting guidance |

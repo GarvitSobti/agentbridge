@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { parseArgs } from 'node:util';
 import { randomUUID } from 'node:crypto';
-import { homePath, readConfig, loadProfile, listProfiles, LocalError } from './local.ts';
+import { homePath, readConfig, loadProfile, listProfiles, LocalError } from './profiles.ts';
 
 let retryKey: string | undefined;
 try {

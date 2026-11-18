@@ -1,6 +1,8 @@
 # Product scope
 
-Status: accepted proof-of-concept boundaries. Updated: 2026-11-16.
+Status: accepted proof-of-concept boundaries. Updated: 2026-11-18.
+
+Delivered so far: domain rules, persistence, loopback HTTP/terminal workflow, and local stdio MCP tools with official SDK protocol tests. Actual assistant pairing, separate-machine access, ownership configuration, and the measured two-person pilot remain outside the completed slices. See [MCP setup](MCP.md) and [the roadmap](ROADMAP.md).
 
 ## Problem
 

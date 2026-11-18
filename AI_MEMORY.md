@@ -1,83 +1,48 @@
 # Project memory
 
-Last updated: 2026-11-17
+Last updated: 2026-11-18
 
 ## Current position
 
-M0 and the local M1 implementation are complete. Storage PR #2 was merged and verified on main at `adc36001bba82a885511d66ac6097159a37c676b`. The `feat/local-relay` slice adds an authenticated loopback service, separate human/agent profiles, local operator actions, and real terminal clients. Next is M2: MCP and actual assistant pairing. No real assistant integration or pilot outcome has been verified.
+M0 and local M1 are complete. PRs #1 (domain), #2 (SQLite), and #3 (authenticated relay/CLI) are merged; main was verified at `0a7298f787335858bb6f37399b745a56be284084`. The owner confirmed the manual local relay workflow works on Windows. The `feat/mcp-adapter` slice implements M2's local protocol layer. Actual assistant pairing, cross-machine operation, and pilot outcomes remain unverified. Check GitHub for this branch's PR/check status before merging.
 
-Working name: Agent Bridge. Repository: `GarvitSobti/agentbridge`. Owner: Garvit Sobti. License: MIT, included in LICENSE. The unpublished package uses the name `agent-bridge`.
+Working name: Agent Bridge. Repository: `GarvitSobti/agentbridge`. Owner: Garvit Sobti. MIT license. Unpublished package name: `agent-bridge`.
 
 ## Confirmed direction
 
-- Build an open-source proof of concept before pursuing commercial validation.
-- First test: Garvit and a friend coordinate two agents while working on one shared project from separate machines and branches. The friend uses Claude; the exact client and OS are not yet confirmed.
-- Solve explicit requests, clarifications, agreed decisions, and handoffs.
-- Use existing assistants; the relay has no model and needs no separate model API key.
-- Require human acceptance before an agent starts work requested by a peer.
-- Begin with explicit inbox checks. Do not promise agent wake-up or automatic background delivery.
-- Keep Git operations, execution, and review in the developers' existing workflows.
-- Existing projects overlap; uniqueness and usefulness remain unproven.
+- Build an open-source two-person proof of concept before commercial discovery.
+- Two developers, one repository, separate branches; eventual test across two machines. The friend uses Claude, but the exact client and OS are still unknown.
+- Explicit requests, clarifications, revisioned interface decisions, and self-reported completion references.
+- Use existing assistants. No model or separate model API key in the relay.
+- Human acceptance remains a distinct server-enforced role. Keep human profiles out of MCP configuration.
+- Explicit inbox/event checks only; no agent wake-up, execution, Git operations, or automatic merging.
+- Same-user operator privileges remain trusted. Role separation does not isolate filesystem access or prove a human is present.
+- Existing products overlap. Uniqueness, reduced coordination effort, and willingness to pay are unproven.
 
-## Foundation delivered
+## Delivered
 
-- README with motivation, proposed workflow, truthful status, and contributor checks.
-- AGENTS.md and codex.md with development and handoff guidance.
-- Scope, architecture, ADRs, roadmap, and a two-person validation plan.
-- Contribution and security guidance, MIT license, and repository conventions.
-- Dependency-free repository checker and a CI definition for that checker.
-
-## Domain slice delivered
-
-- Request creation, human-role acceptance/decline, assigned-agent start/completion, cancellation, replies, and defensive inbox/event reads.
-- Role and workspace checks on trusted Principal objects; the local relay now constructs those identities from its credential registry.
-- Revisioned decisions with content hashes, preserved history, and two-participant agreement gates.
-- Expected-version conflicts and retry receipts that survive JSON serialization without replaying effects or rolling back current state.
-- Bounded runtime input validation and structured errors; completion evidence remains self-reported.
-- Strict TypeScript source, node:test scenarios, and an eight-step single-process synthetic demo.
-- ADR-008/009 and docs/DOMAIN.md describe the implementation and its limits.
-
-## Storage slice delivered
-
-- Built-in Node SQLite with workspace, request, audit-event, and retry-receipt tables; no runtime package dependency.
-- BEGIN IMMEDIATE wraps current-state loading, domain execution, all command writes, and workspace revision changes.
-- Transactional schema migration, application identity checks, compatible reopen, and rejection of foreign/newer databases.
-- Persistent inbox/events, idempotency receipts, decision revisions, and self-reported completion evidence.
-- Real-file tests with competing writer threads, a killed child writer, lock timeouts, and SQL fault injection.
-- Storage close/reopen demo, docs/STORAGE.md, and ADR-010.
-
-## Local relay slice delivered
-
-- Loopback-only HTTP service with persistent inbox/request/event reads and domain command writes.
-- Random opaque credentials mapped to workspace/participant/role; SQLite migration 2 stores hashes and persistent revocation only.
-- Separate private human/agent profile files outside the repository, explicit CLI profile selection, and local-only credential issuance/revocation.
-- Authentication rechecked after write-body reading and before replaying saved command results; bounded JSON, Host/Origin checks, and redacted errors.
-- Real CLI bootstrap/server/client processes, including request, reply, human-profile acceptance, agent-profile start, restart, and revocation.
-- docs/LOCAL_RELAY.md has the complete three-window PowerShell walkthrough; ADR-011 records the local authentication boundary. Same-user filesystem privileges remain trusted, so this is not OS process isolation or proof of human presence.
+- Repository instructions, scope, architecture, ADR log, roadmap, validation plan, security/contribution guidance, and checks.
+- Domain lifecycle, bounded inputs, workspace/role checks, stale-version errors, stable retry receipts, immutable decision revisions and current-agreement gates.
+- Built-in SQLite, append-only migrations, transactional state/event/receipt updates, persistent inbox and event cursors, writer/crash/failure tests.
+- Authenticated IPv4-loopback HTTP, hash-only credential registry, persistent revocation, private separate agent/human profiles, local operator actions, and terminal clients. Credentials and the database stay outside the checkout.
+- Stdio MCP adapter with ten agent-scoped tools using the official v2 SDK. Effective role/workspace/participant checked at startup and per call. No privileged or catch-all tools. Profile-reader module avoids SQLite/operator imports in the adapter.
+- Strict Zod tool schemas, stable write retry keys, expected versions, bounded HTTP requests/responses, redirect refusal, sanitized errors, and untrusted peer-content envelopes.
+- Official SDK subprocess tests plus HTTP boundary tests. [MCP guide](docs/MCP.md) documents direct-Node host configuration, human approval, error/retry semantics, and what remains unverified. ADR-012 records the dependency/transport choices.
 
 ## Verification
 
-- On Node.js 24.1.0 with SQLite 3.49.1, strict source TypeScript checking and 67 behavioral tests pass (34 domain, 18 storage, 11 HTTP/auth, 4 CLI process tests).
-- `npm.cmd run check` covers documentation, TypeScript, and the complete behavioral suite. The existing committed development dependency versions are unchanged; runtime dependencies remain empty.
-- Current documentation check passes for 17 Markdown files and 59 local file links. Both npm CLI help entry points and `git diff --check` pass.
-- `npm.cmd run demo:domain` exercises eight synthetic lifecycle transitions; `npm.cmd run demo:storage` verifies a saved accepted request and safe original-create retry after reopening a real database file.
-- CI runs documentation checks, TypeScript, domain/storage/HTTP/CLI tests, and both synthetic demos. Inspect the local relay PR for the latest hosted result.
-- The lockfile pins development tooling and package integrity. Runtime dependencies remain empty.
-- Node 24.1.0 emits expected SQLite and type-stripping warnings. Type stripping is not type checking; the compiler check remains required.
-- Loopback HTTP and local credential authentication are tested over actual connections and separate processes. Real coding assistants, remote transport/TLS, and cross-machine provisioning remain unimplemented. Crash tests simulate a killed writer, not power or hardware failure.
+- Baseline 67 domain/storage/HTTP/CLI tests pass locally on Node 24.1.0, SQLite 3.49.1, after the profile-reader refactor. Four new HTTP client boundary tests also pass locally.
+- Hosted check at commit `bbcc0cdecd677584317a15d8fe5d765f4d575cbe` passed documentation, strict TypeScript, all 74 then-current tests (including seven official SDK stdio tests), and both existing synthetic demos. [CI evidence](https://github.com/GarvitSobti/agentbridge/actions/runs/44318439552).
+- The four later HTTP tests bring the expected full total to 78; inspect the latest PR checks for the final combined result rather than treating this expected count as a recorded pass.
+- Shell npm networking is denied in this managed session. npm generated the dependency lockfile in a temporary read-only-permission GitHub workflow, then the workflow was removed from the final branch. Official SDK tests/typechecking run in hosted CI; the newly pinned SDK is not installed in this local checkout. Never substitute a cached older SDK as compatibility evidence.
+- Runtime: official server SDK 2.4.0 and Zod 4.6.5. Development: official client SDK 2.4.0, TypeScript 5.9.3, Node types 24.1.0. Registry resolutions and integrity are locked.
+- MCP tests use two SDK clients and scripted human-role CLI acceptance, without models. They do not verify actual assistant clients, prompt-injection resistance, human presence, or real code integration. Completion remains self-reported. Writer-kill tests do not simulate power/hardware failure.
+- Node 24.1.0 emits SQLite/type-stripping warnings. Type stripping does not replace TypeScript checking.
 
-## Open questions
+## Publication and workspace
 
-- Which Claude client (Code, Desktop, or web) and OS will the second participant use? Verify the actual pair before claiming compatibility.
-- Which synthetic CRM fixture best reproduces the original coordination problem without sharing private project code?
-- Remote authentication/distribution and TLS remain open in ADR-007. Local provisioning, private profile storage, revocation, and the trusted-host limit are accepted in ADR-011.
-- MCP SDK choice is deferred. SQLite uses the Node built-in; TypeScript 5.9.3 and @types/node 24.1.0 are pinned development dependencies (undici-types is transitive development tooling).
-- Product name can change. No package-name or trademark availability has been established.
-
-## Publication
-
-The public repository is https://github.com/GarvitSobti/agentbridge. PRs #1 and #2 are merged. Local relay work belongs on `feat/local-relay`; review its pull request and hosted checks before merging. Preserve original preparation commits on local-foundation; inspect Git history for published revisions.
+Public repo: https://github.com/GarvitSobti/agentbridge. Feature work belongs on `feat/mcp-adapter`; do not merge without the owner's instruction. Preserve preparation history on `local-foundation`. This managed session uses a permitted temporary checkout; it does not edit the Desktop checkout or the unrelated Devops project. Pull the merged PR into the Desktop checkout before following its guide.
 
 ## Next task
 
-Begin M2: confirm the friend's exact Claude client and OS, then connect an MCP adapter to the local relay using only an explicitly selected agent profile. Verify effective role with /v1/identity and exercise an actual assistant request/reply/approval handoff. Human credentials and local operator actions must never be exposed as agent tools. Cross-machine deployment remains M3.
+Confirm the exact Claude client/OS, then verify one local two-assistant handoff using explicit Alice/Bob agent profiles and separate human-profile approval. Record actual client versions, launch configuration, tool discovery, and request/reply/decision/start/completion evidence. Do not mark M2 complete from protocol tests alone. Remote provisioning, TLS, and two-machine access remain ADR-007/M3; choose a synthetic CRM fixture before sharing project material.

@@ -18,10 +18,16 @@
     "relay:init": "node src/cli/relay.ts init",
     "relay": "node src/cli/relay.ts start",
     "relay:credential": "node src/cli/relay.ts credential",
-    "bridge": "node src/cli/bridge.ts"
+    "bridge": "node src/cli/bridge.ts",
+    "mcp": "node src/mcp/stdio.ts"
   },
   "devDependencies": {
+    "@modelcontextprotocol/client": "2.4.0",
     "@types/node": "24.1.0",
     "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.4.0",
+    "zod": "4.6.5"
   }
 }

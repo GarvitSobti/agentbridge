@@ -37,6 +37,8 @@ npm run demo:storage
 
 The local service commands are `npm run relay:init`, `npm run relay`, and `npm run bridge -- ...`. See [the run guide](docs/LOCAL_RELAY.md). For automated or manual checks in this managed environment, pass `--home` pointing at a fresh private directory under the permitted temporary directory; do not write profiles to the user's real home or commit them. `tests/relay.test.mjs` and `tests/cli.test.mjs` cover authentication, role boundaries, revocation, and process restart.
 
+The MCP adapter uses the official v2 SDK over stdio. `tests/mcp.test.mjs` drives real adapter subprocesses using the matching SDK client; `tests/mcp-http.test.mjs` checks HTTP transport boundaries. Neither test runs a model. Configure hosts using Node directly, with an explicit agent profile, as described in [docs/MCP.md](docs/MCP.md). Keep human profiles and operator actions out of MCP tools.
+
 The documentation-only checker remains available without installed dependencies: `node scripts/check-repo.mjs`. On Windows, use `npm.cmd` if PowerShell blocks `npm.ps1`.
 
 ## End a session

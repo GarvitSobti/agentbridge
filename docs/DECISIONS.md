@@ -120,6 +120,18 @@ Use statuses Proposed, Accepted, Rejected, and Superseded. Preserve old decision
 - Verification: Actual HTTP and separate-process CLI tests cover request/reply/approval/start, agent-token denial, forged identity fields, restart, revocation before retries and during partial bodies, body limits, metadata forgery, profile privacy, and local operator replacement. No real assistant connection has been verified.
 - Sources: [Node HTTP](https://nodejs.org/download/release/v24.1.0/docs/api/http.html), [Node crypto](https://nodejs.org/download/release/v24.1.0/docs/api/crypto.html), [Node filesystem](https://nodejs.org/download/release/v24.1.0/docs/api/fs.html).
 
+## ADR-012: Use the official MCP v2 SDK over local stdio
+
+- Date: 2026-11-18
+- Status: Accepted
+- Context: The local relay works through terminal clients. Existing assistants need a narrow tool surface without receiving human credentials, opening the database, or inventing a separate authorization path.
+- Decision: Pin `@modelcontextprotocol/server` 2.4.0 and Zod 4.6.5 at runtime, with matching `@modelcontextprotocol/client` 2.4.0 for protocol tests. Use local stdio and launch Node directly. Expose ten typed agent tools, with no human approval, administration, shell, Git, or generic command tool. Split profile readers from local SQLite/bootstrap operations. Verify the selected credential's actual workspace, participant, and agent role through `/v1/identity` at startup and before each tool operation; the relay still authenticates each request independently.
+- Alternatives: Handwrite MCP JSON-RPC and lifecycle negotiation; use an older cached SDK solely because it is locally available; expose a network MCP service; load the operator module from the adapter.
+- Rationale: The official SDK owns protocol negotiation, validation, and stdio lifecycle. A local process reuses the tested HTTP boundary without introducing another listening endpoint. Narrow tools make capability discovery clear, while server-side roles remain authoritative.
+- Consequences: The package now has runtime dependencies. SDK client/server versions and registry integrity are locked together; schema validation is separate from domain validation. Stdout is reserved for protocol output. Peer content has an explicit untrusted-data envelope, which is not an instruction-isolation guarantee. Writes require caller-selected stable retry keys; existing-request writes require an expected version. Requests/responses are bounded, requests time out, and redirects are refused. There is no automatic retry, background poll, cursor persistence, or agent wake-up.
+- Verification: Official SDK clients drive actual stdio subprocesses against a real relay, including a full synthetic lifecycle and separate human-profile CLI acceptance. Tests cover schema rejection, forged metadata, effective role changes, revocation, uncertain-write retry semantics, relay restart, untrusted peer text, redirects, size limits, and sanitized errors. These establish protocol behavior, not actual Codex/Claude compatibility, human presence, or a two-machine pilot.
+- Sources: [Official TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk), [server tools](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/docs/servers/tools.md), [Codex MCP configuration](https://developers.openai.com/codex/mcp).
+
 ## New ADR template
 
 ```text

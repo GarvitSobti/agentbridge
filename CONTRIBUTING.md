@@ -1,6 +1,6 @@
 # Contributing
 
-Agent Bridge has a local authenticated relay and terminal workflow. The next implementation target is an MCP adapter and real assistant pairing. Read [the scope](docs/SCOPE.md) and [the current progress](AI_MEMORY.md) before starting.
+Agent Bridge has a local authenticated relay, terminal workflow, and stdio MCP adapter. The next integration target is real assistant pairing. Read [the scope](docs/SCOPE.md) and [the current progress](AI_MEMORY.md) before starting.
 
 ## Work on a change
 
@@ -11,13 +11,13 @@ Agent Bridge has a local authenticated relay and terminal workflow. The next imp
 5. Record architectural changes in [the ADR log](docs/DECISIONS.md).
 6. Run `npm run check` from the repository root. Run `npm run demo:domain` or `npm run demo:storage` when changing the demonstrated behavior.
 
-Use Node.js 24.x and run `npm ci` to install the pinned TypeScript compiler and Node type definitions. There are no runtime package dependencies. A dependency-free documentation-only check is also available: `node scripts/check-repo.mjs`.
+Use Node.js 24.x and run `npm ci` to install the pinned compiler, Node types, official MCP SDK packages, and Zod. A dependency-free documentation-only check is also available: `node scripts/check-repo.mjs`.
 
 ## Verification expectations
 
 Documentation changes need working local links and accurate status statements. Domain changes need meaningful behavior tests; storage changes need real SQLite transactions and failure scenarios. Relay changes need actual HTTP tests for identity, role boundaries, revocation, bounded input, and restart. Append migrations rather than editing shipped definitions. Keep profile tokens out of fixtures, logs, and Git. Report what was not run and why.
 
-Never claim a client is supported before exercising its actual integration. A self-reported completion or generated test summary is not independent verification.
+MCP changes need official SDK stdio tests and authorization/failure coverage. Use [docs/MCP.md](docs/MCP.md) for the supported tool surface and setup to try. Never claim an assistant client is supported before exercising its actual integration. A self-reported completion or generated test summary is not independent verification.
 
 ## Issues and pull requests
 

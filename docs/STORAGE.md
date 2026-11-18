@@ -16,7 +16,7 @@ Synthetic data remains in `.agent-bridge/storage-demo.db` for inspection. Each r
 
 ## Store interface
 
-The implementation is [SqliteStore](../src/storage/sqlite-store.ts). It uses Node.js 24.x's built-in `node:sqlite`, with no runtime package dependencies or native addon installation. Early Node 24 releases emit SQLite and type-stripping experimental warnings. Node type definitions are pinned development tooling.
+The implementation is [SqliteStore](../src/storage/sqlite-store.ts). Storage uses Node.js 24.x's built-in `node:sqlite`, with no additional storage package or native addon installation. The separate MCP adapter adds SDK/Zod runtime dependencies. Early Node 24 releases emit SQLite and type-stripping experimental warnings. Node type definitions are pinned development tooling.
 
 ```js
 import { SqliteStore } from './src/storage/sqlite-store.ts';

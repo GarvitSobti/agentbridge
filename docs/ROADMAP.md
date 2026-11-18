@@ -30,10 +30,11 @@ Exit: two terminal clients complete a persisted lifecycle; invalid and duplicate
 ## M2: Connect the actual assistants
 
 - [ ] Confirm both participants' assistant clients and operating systems.
-- [ ] Choose and pin the MCP SDK and validate its transport with those clients.
-- [ ] Expose scoped inbox, request, reply, decision, start, and completion actions.
+- [x] Pin the official MCP SDK and verify stdio with matching SDK clients.
+- [ ] Validate transport with the actual assistant clients and record their versions.
+- [x] Expose scoped inbox, request, reply, decision, start, and completion actions.
 - [x] Provide a separate human-profile terminal acceptance interface (actual assistant pairing remains unverified).
-- [ ] Verify that MCP credentials cannot approve human-only actions.
+- [x] Verify effective agent identity at startup/per call, omit human-only tools, and test role/revocation boundaries.
 - [ ] Exercise one complete handoff using two actual assistant sessions.
 
 Exit: both assistants exchange and act on an explicitly accepted request. Record exact tested client versions and instructions. Do not claim compatibility from an MCP configuration alone.

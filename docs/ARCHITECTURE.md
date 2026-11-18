@@ -1,10 +1,10 @@
 # Architecture
 
-Status: domain, SQLite persistence, loopback relay, and terminal clients are implemented. MCP and cross-machine operation remain proposed. See [the decisions](DECISIONS.md), [domain guide](DOMAIN.md), [storage guide](STORAGE.md), and [local run guide](LOCAL_RELAY.md).
+Status: domain, SQLite persistence, loopback relay, terminal clients, and stdio MCP adapter are implemented. Actual assistant pairing and cross-machine operation remain unverified. See [the decisions](DECISIONS.md), [domain guide](DOMAIN.md), [storage guide](STORAGE.md), [local run guide](LOCAL_RELAY.md), and [MCP guide](MCP.md).
 
 ## System shape
 
-The current local demo has one loopback relay, one database, and terminal clients for two participants on the same machine. The diagram below is the target cross-machine architecture: local MCP adapters and the remote deployment boundary are still future work. Terminal and eventual assistant interfaces share the same domain rules.
+The current local demo has one loopback relay, one database, terminal clients, and local stdio MCP adapters for two participants on the same machine. The diagram below shows the target machine split: the remote deployment boundary is still future work. Terminal and MCP interfaces use HTTP to reach the same domain rules.
 
 ```mermaid
 flowchart TB
@@ -73,7 +73,7 @@ Use database transactions for each state change and event append. Do not impleme
 
 ## Delivery and reconnects
 
-The adapter explicitly requests events after its last cursor and deduplicates by event ID. Reading a message does not accept a task. Offline messages remain stored. No WebSocket or assistant-specific hook is required for the initial proof of concept. Add push delivery only after measuring the limitations of explicit checks.
+The MCP events tool accepts an explicit `after` cursor and bounded page limit. The caller saves its cursor; the adapter does not poll, persist a cursor, or launch background work. Reading a message does not accept a task. Offline messages remain stored. No WebSocket or assistant-specific hook is required for the initial proof of concept. Add push delivery only after measuring the limitations of explicit checks.
 
 ## Trust and credentials
 
@@ -83,9 +83,9 @@ Separate human and agent credentials are a server-side capability boundary, not 
 
 Peer messages may contain misleading instructions. Display sender identity, role, and references; treat the content as untrusted input. The relay must never interpret message text as an executable command. Declared ownership is coordination metadata, not a filesystem sandbox.
 
-## Proposed source layout
+## Source layout
 
-Current source and planned adapters:
+Current source:
 
 ```text
 src/domain/       Implemented: shared state machine, role rules, and input validation
@@ -93,12 +93,14 @@ src/storage/      Implemented: SQLite transactions, migrations, and persistent s
 src/runtime.ts    Implemented: server-owned IDs, time, and SHA-256 defaults
 src/relay/        Implemented: authenticated loopback HTTP entry point
 src/cli/          Implemented: local bootstrap, operator actions, and terminal client
-tests/            Implemented: domain, SQLite, actual HTTP, and CLI process tests
+tests/            Implemented: domain, SQLite, HTTP, CLI, and official SDK stdio tests
 examples/         Implemented: synthetic domain and storage restart demos
-src/mcp/          Planned: local assistant-facing adapter
+src/mcp/          Implemented: agent-only tools, HTTP client, and stdio entry point
 ```
 
-Keep one package until separate publishing or deployment needs justify splitting it. Deployment and real assistant compatibility remain unverified.
+Keep one package until separate publishing or deployment needs justify splitting it. Deployment and real assistant compatibility remain unverified. The official MCP v2 server SDK and Zod are runtime dependencies; the matching client SDK is test tooling (ADR-012).
+
+The MCP process loads a selected agent profile using `src/cli/profiles.ts`, verifies effective identity through HTTP, and connects the SDK stdio transport. It never imports the local SQLite/operator module. Tool schemas allow only agent task operations, require stable retry keys and current versions, and wrap peer text as untrusted data. The HTTP client rechecks identity for each tool, disallows redirects/remote URLs, and limits requests and responses. Protocol validation and dispatch belong to the SDK; authorization and state changes remain in the relay/domain.
 
 The pure executor returns a complete next-state candidate and never writes it. The SQLite adapter reconstructs that reference state inside a transaction and persists the changed request, one event, one retry receipt, and workspace revision together. `BEGIN IMMEDIATE` serializes writers before they read state; request/workspace revision checks provide additional conflict detection. Read methods use a consistent read transaction.
 

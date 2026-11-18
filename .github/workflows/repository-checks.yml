@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   domain-and-docs:
-    name: Domain, storage, relay, CLI, and documentation
+    name: Domain, storage, relay, CLI, MCP, and documentation
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -20,9 +20,9 @@ jobs:
         with:
           node-version-file: .nvmrc
           package-manager-cache: false
-      - name: Install pinned development dependencies
+      - name: Install pinned dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Check documentation, TypeScript, and domain/storage/HTTP/CLI behavior
+      - name: Check documentation, TypeScript, and domain/storage/HTTP/CLI/MCP behavior
         run: npm run check
       - name: Exercise the synthetic domain handoff
         run: npm run demo:domain

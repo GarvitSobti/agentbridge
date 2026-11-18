@@ -1,6 +1,6 @@
 # Contributing
 
-Agent Bridge has a persistent request domain prototype. The next implementation target is a loopback relay. Read [the scope](docs/SCOPE.md) and [the current progress](AI_MEMORY.md) before starting.
+Agent Bridge has a local authenticated relay and terminal workflow. The next implementation target is an MCP adapter and real assistant pairing. Read [the scope](docs/SCOPE.md) and [the current progress](AI_MEMORY.md) before starting.
 
 ## Work on a change
 
@@ -15,7 +15,7 @@ Use Node.js 24.x and run `npm ci` to install the pinned TypeScript compiler and 
 
 ## Verification expectations
 
-Documentation changes need working local links and accurate status statements. Domain changes need meaningful tests for role rules, state transitions, retries, and decision revisions. Storage changes need real SQLite tests for transactions, reopen, errors, and competing writes. Append migrations rather than editing shipped definitions. Network tests must be added with the relay. Report what was not run and why.
+Documentation changes need working local links and accurate status statements. Domain changes need meaningful behavior tests; storage changes need real SQLite transactions and failure scenarios. Relay changes need actual HTTP tests for identity, role boundaries, revocation, bounded input, and restart. Append migrations rather than editing shipped definitions. Keep profile tokens out of fixtures, logs, and Git. Report what was not run and why.
 
 Never claim a client is supported before exercising its actual integration. A self-reported completion or generated test summary is not independent verification.
 

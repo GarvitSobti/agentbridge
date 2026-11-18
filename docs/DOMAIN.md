@@ -1,6 +1,6 @@
 # Request domain API
 
-Status: implemented domain prototype. A separate [SQLite adapter](STORAGE.md) supplies local persistence; network service, credential authentication, and real assistant connections remain unimplemented.
+Status: implemented domain prototype. A [SQLite adapter](STORAGE.md) supplies local persistence, and the [local relay](LOCAL_RELAY.md) authenticates HTTP clients. Real assistant connections and cross-machine deployment remain unimplemented.
 
 ## Run it
 
@@ -85,6 +85,6 @@ Every report is labeled `self_reported`. The domain does not execute the command
 
 State contains requests, events, and retry receipts and can be serialized as JSON. Domain serialization tests establish encoding/decoding behavior; the separate SQLite adapter and storage tests verify persistence in actual database files.
 
-A store must read the current state, execute the command, and commit the returned state atomically. Concurrent clients must not overwrite each other's snapshots. Events and retry receipts belong in that same transaction; the implemented SQLite adapter enforces this boundary. A future authentication layer must check credential revocation before calling the domain, including on a retry.
+A store must read the current state, execute the command, and commit the returned state atomically. Concurrent clients must not overwrite each other's snapshots. Events and retry receipts belong in that same transaction; the implemented SQLite adapter enforces this boundary. The local HTTP adapter checks credential revocation before calling the domain, including on retries and after a write body is read.
 
-This reference model copies its state and retains histories without compaction. It is intended for the initial small proof of concept, not an optimized long-running service. Retention, authenticated endpoints, network inbox delivery, and MCP clients remain future work.
+This reference model copies its state and retains histories without compaction. It is intended for the initial small proof of concept, not an optimized long-running service. Retention, automatic inbox delivery, cross-machine access, and MCP clients remain future work.

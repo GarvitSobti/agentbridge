@@ -23,7 +23,7 @@ Exit: documentation checks pass, the initial commit exists, and its files can be
 - [x] Add a single-process synthetic domain handoff demo.
 - [x] Add SQLite persistence with migrations, transactional event recording, reopen/crash recovery, and competing-writer tests.
 - [x] Add a synthetic SQLite close/reopen and retry demonstration.
-- [ ] Add a loopback-only relay and two terminal clients for a synthetic request/reply scenario.
+- [x] Add a loopback-only authenticated relay and two terminal clients for a synthetic request/reply/approval scenario.
 
 Exit: two terminal clients complete a persisted lifecycle; invalid and duplicate operations behave as documented. This is not yet an assistant integration.
 
@@ -32,7 +32,7 @@ Exit: two terminal clients complete a persisted lifecycle; invalid and duplicate
 - [ ] Confirm both participants' assistant clients and operating systems.
 - [ ] Choose and pin the MCP SDK and validate its transport with those clients.
 - [ ] Expose scoped inbox, request, reply, decision, start, and completion actions.
-- [ ] Provide a separate human acceptance interface.
+- [x] Provide a separate human-profile terminal acceptance interface (actual assistant pairing remains unverified).
 - [ ] Verify that MCP credentials cannot approve human-only actions.
 - [ ] Exercise one complete handoff using two actual assistant sessions.
 
@@ -40,7 +40,7 @@ Exit: both assistants exchange and act on an explicitly accepted request. Record
 
 ## M3: Cross-machine operation and recovery
 
-- [ ] Resolve ADR-007 and implement provisioning, authentication, revocation, and redacted logging.
+- [ ] Resolve the remote portion of ADR-007; local-only provisioning, authentication, and revocation are implemented under ADR-011.
 - [ ] Require TLS for non-loopback access and verify workspace/role isolation.
 - [ ] Verify event cursors, disconnect/reconnect, server restart, and retry behavior.
 - [ ] Document a reproducible setup for two machines without committing credentials.

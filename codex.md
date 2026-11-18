@@ -31,9 +31,11 @@ npm run demo:domain
 npm run demo:storage
 ```
 
-`npm run check` runs `check:docs`, `typecheck`, and `test`. Domain, runtime helpers, and storage TypeScript source are checked; JavaScript tests and demos run directly in Node. The domain demo exercises a single-process handoff. The storage demo closes/reopens a local SQLite file and verifies a safe retry. Neither authenticates humans, connects real agents, or uses a network. No application build or verified assistant setup exists yet.
+`npm run check` runs `check:docs`, `typecheck`, and `test`. All TypeScript source is checked; JavaScript tests and demos run directly in Node. The domain demo exercises a single-process handoff; the storage demo verifies database reopen. HTTP/CLI tests exercise a local authenticated relay using real connections and separate processes. They do not connect real coding assistants or prove a human is at a keyboard.
 
 `tests/storage.test.mjs` uses real temporary files, independent writer threads, a killed child process, and SQL failure injection. Keep those tests meaningful; do not replace them with mocks of the storage behavior. Store details and limitations are in [docs/STORAGE.md](docs/STORAGE.md).
+
+The local service commands are `npm run relay:init`, `npm run relay`, and `npm run bridge -- ...`. See [the run guide](docs/LOCAL_RELAY.md). For automated or manual checks in this managed environment, pass `--home` pointing at a fresh private directory under the permitted temporary directory; do not write profiles to the user's real home or commit them. `tests/relay.test.mjs` and `tests/cli.test.mjs` cover authentication, role boundaries, revocation, and process restart.
 
 The documentation-only checker remains available without installed dependencies: `node scripts/check-repo.mjs`. On Windows, use `npm.cmd` if PowerShell blocks `npm.ps1`.
 

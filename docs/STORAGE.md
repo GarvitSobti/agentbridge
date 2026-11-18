@@ -1,6 +1,6 @@
 # SQLite storage
 
-Status: implemented local persistence adapter. No relay, credential authentication, network delivery, or real agent connection is included.
+Status: implemented local persistence adapter, now used by the [authenticated loopback relay](LOCAL_RELAY.md). Real agent connections and cross-machine deployment remain unimplemented.
 
 ## Try the restart demonstration
 
@@ -85,7 +85,7 @@ Migration definitions live in [migrations.ts](../src/storage/migrations.ts). Ver
 
 The adapter changes existing request rows and appends only the new event and receipt. SQLite foreign keys and unique constraints supplement domain rules. Basic stored-envelope and event/receipt-count checks reject inconsistent state instead of overwriting it. This is not a full integrity audit or protection against an attacker who can edit the database file.
 
-The database has an application ID (`AGBR`) and a `user_version` migration marker. Initial migration DDL and its version marker commit together. Reopening the current version is idempotent. A nonempty unrecognized file or a newer schema is rejected. Existing data is never reset to make initialization succeed. Future migrations must append a version; editing a shipped migration is not a migration strategy.
+The database has an application ID (`AGBR`) and a `user_version` migration marker. Initial migration DDL and its version marker commit together. Migration 2 appends a credentials table for scoped token hashes, role/participant metadata, and revocation; task state from schema 1 is preserved. Trusted local operator methods issue/revoke credentials, while authenticate returns a registry-derived principal or null. Those methods do not expose administration over HTTP. Reopening the current version is idempotent. A nonempty unrecognized file or a newer schema is rejected. Existing data is never reset to make initialization succeed. Future migrations must append a version; editing a shipped migration is not a migration strategy.
 
 File-backed connections use WAL mode and `synchronous=FULL`. The SQLite database and its WAL/SHM files belong on a local filesystem managed by one relay host. Do not put them on a network share or allow multiple hosts to share them. For a backup, use an SQLite-aware backup procedure or stop writers and close connections first; copying only a live `.db` can miss committed WAL data.
 
@@ -95,7 +95,7 @@ Domain errors keep their original codes. Storage errors use `StoreError.code`: `
 
 The API is synchronous. Lock waits and domain execution block the calling event loop for their duration. The reference domain still loads and copies workspace history; retention, pagination of stored histories, and high-volume optimization are not implemented. The default timeout is bounded, but this is a two-person proof of concept rather than a performance claim.
 
-Stored task data is not encrypted. Local filesystem permissions, backup handling, and relay-host access control remain the operator's responsibility. There is no credential store or token provisioning in this slice.
+Stored task data is not encrypted. Local filesystem permissions, backup handling, and relay-host access control remain the operator's responsibility. Credential plaintext is never stored in SQLite; local profile files are separate from the database and repository. Remote provisioning and transport security are still outside this storage layer.
 
 ## Verified failure scenarios
 

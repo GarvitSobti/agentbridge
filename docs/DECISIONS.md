@@ -69,6 +69,7 @@ Use statuses Proposed, Accepted, Rejected, and Superseded. Preserve old decision
 - Date: 2026-11-16
 - Status: Proposed
 - Context: The two-person network test needs authentication, human/agent capability separation, and a reachable relay without disclosing private credentials.
+- Local progress: ADR-011 accepts and implements the loopback credential, private-profile, and revocation flow. Remote identity provisioning, TLS, distribution, and cross-machine operation remain proposed here.
 - Proposal: Bind opaque, revocable credentials to a workspace, participant, and role; persist token hashes only. Require TLS beyond loopback, bounded payloads, and redacted logs. Provide operator-controlled membership for two participants rather than public signup.
 - Alternatives to evaluate: A device approval flow; a separate local approval channel; authenticated private networking.
 - Open questions: Initial provisioning, human credential storage, token rotation, revocation, backup handling, and hosting platform.
@@ -105,6 +106,19 @@ Use statuses Proposed, Accepted, Rejected, and Superseded. Preserve old decision
 - Consequences: The synchronous driver blocks the calling event loop while executing or waiting for locks. Database files and WAL/SHM sidecars must stay on a local relay host. Credentials are not implemented by the store, and data is not encrypted. State reconstruction still loads reference histories. Large-history optimization, retention, backups, and distributed deployment remain separate work. Early Node 24 emits an experimental SQLite warning.
 - Verification: Real-file tests exercise reopen, preserved decisions and retries, partial-write rollback, versioned migration failure, concurrent writers, lock timeout recovery, workspace boundaries, and an abruptly killed child writer. The synthetic storage demo closes/reopens a connection and verifies saved state plus safe retry. These checks do not establish behavior under power loss or remote filesystems.
 - Sources: [Node SQLite API](https://nodejs.org/download/release/v24.9.0/docs/api/sqlite.html), [SQLite transactions](https://www.sqlite.org/lang_transaction.html).
+
+## ADR-011: Authenticate a loopback relay with separate local capabilities
+
+- Date: 2026-11-17
+- Status: Accepted
+- Context: The next proof-of-concept step is a real service and two terminal clients on one laptop. Identity objects cannot be accepted from HTTP task payloads, and agent credentials must not approve another developer's work.
+- Decision: Bind the HTTP service only to 127.0.0.1. Use random 256-bit bearer tokens mapped server-side to one workspace, participant, and human/agent role. Append SQLite migration 2 for token hashes and persistent revocation; never persist plaintext tokens in SQLite. Bootstrap explicit profiles into separate agent/human directories in a private home outside the repository. Provide local operator issuance/revocation with no HTTP administration endpoint. Authenticate every read/write and recheck revocation after reading a write body. Use the same tested domain/store for all task operations.
+- Alternatives: Trust a role or humanApproved field in request JSON; use one shared all-powerful room token; introduce public signup or remote identity infrastructure for the local demonstration.
+- Rationale: The server can enforce a narrow capability boundary with no new runtime package or model API integration. Explicit profiles make the local workflow testable, while opaque credentials keep task messages separate from identity.
+- Consequences: This is not OS process isolation or proof of human presence. A process with the operator's filesystem privileges can read credentials/registry or invoke local issuance, so the local demo assumes a trusted host and operator. Future assistant adapters must receive only an agent credential and verify its effective role through /v1/identity. Cross-machine distribution, TLS, and a suitable remote operator boundary remain under ADR-007/M3.
+- HTTP boundary: No browser origins, unexpected Host headers, CORS, upgrades, remote binds, or redirects in the client. Limit JSON to 64 KiB (including chunked bodies), header size, connection count, and request duration. Return structured errors without raw token values or internal causes. Include retry keys for uncertain CLI writes; never silently retry or refresh approval versions.
+- Verification: Actual HTTP and separate-process CLI tests cover request/reply/approval/start, agent-token denial, forged identity fields, restart, revocation before retries and during partial bodies, body limits, metadata forgery, profile privacy, and local operator replacement. No real assistant connection has been verified.
+- Sources: [Node HTTP](https://nodejs.org/download/release/v24.1.0/docs/api/http.html), [Node crypto](https://nodejs.org/download/release/v24.1.0/docs/api/crypto.html), [Node filesystem](https://nodejs.org/download/release/v24.1.0/docs/api/fs.html).
 
 ## New ADR template
 

@@ -1,7 +1,8 @@
 import { DatabaseSync } from 'node:sqlite';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { createBoard, execute, readEvents, readInbox, readRequest, DomainError } from '../domain/board.ts';
 import { authorize } from '../domain/validation.ts';
-import type { BoardState, CommandResult, DomainEvent, Environment, RetryReceipt, WorkRequest, Workspace } from '../domain/types.ts';
+import type { BoardState, CommandResult, DomainEvent, Environment, Principal, RetryReceipt, Role, WorkRequest, Workspace } from '../domain/types.ts';
 import { nodeEnvironment } from '../runtime.ts';
 import { APPLICATION_ID, MIGRATIONS } from './migrations.ts';
 
@@ -35,6 +36,12 @@ function decode<T>(value: unknown): T {
 export interface StoreOptions {
   busyTimeoutMs?: number;
   environment?: Environment;
+}
+
+export interface IssuedCredential {
+  id: string;
+  token: string;
+  principal: Principal;
 }
 
 /** Local-file persistence adapter. Principals are trusted in-process identities, not credentials. */
@@ -187,6 +194,38 @@ export class SqliteStore {
     this.#open();
     const actor = authorize(this.#workspace, principal);
     return this.#transaction('DEFERRED', () => readEvents(this.#load().state, actor, after, limit));
+  }
+  /** Trusted local operator API. Never expose this as an unauthenticated HTTP route. */
+  issueCredential(participantId: string, role: Role): IssuedCredential {
+    this.#open();
+    const principal = authorize(this.#workspace, { workspaceId: this.#workspace.id, participantId, role });
+    const token = 'ab_' + randomBytes(32).toString('base64url');
+    const id = randomUUID();
+    const hash = createHash('sha256').update(token).digest('hex');
+    this.#transaction('IMMEDIATE', () => {
+      this.#db.prepare('INSERT INTO credentials (id, workspace_id, participant_id, role, token_hash, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+        .run(id, this.#workspace.id, participantId, role, hash, new Date().toISOString());
+    });
+    return { id, token, principal };
+  }
+  authenticate(token: unknown): Principal | null {
+    this.#open();
+    if (typeof token !== 'string' || !/^ab_[A-Za-z0-9_-]{43}$/.test(token)) return null;
+    const hash = createHash('sha256').update(token).digest('hex');
+    return this.#transaction('DEFERRED', () => {
+      const row = this.#db.prepare('SELECT participant_id, role FROM credentials WHERE workspace_id = ? AND token_hash = ? AND revoked_at IS NULL')
+        .get(this.#workspace.id, hash);
+      if (!row || typeof row.participant_id !== 'string' || (row.role !== 'human' && row.role !== 'agent')
+        || !this.#workspace.participants.includes(row.participant_id)) return null;
+      return { workspaceId: this.#workspace.id, participantId: row.participant_id, role: row.role };
+    });
+  }
+  /** Trusted local operator API; revocation takes effect on the next authentication. */
+  revokeCredential(id: string): boolean {
+    this.#open();
+    if (typeof id !== 'string' || id.length > 96) return false;
+    return this.#transaction('IMMEDIATE', () => Number(this.#db.prepare('UPDATE credentials SET revoked_at = ? WHERE workspace_id = ? AND id = ? AND revoked_at IS NULL')
+      .run(new Date().toISOString(), this.#workspace.id, id).changes) === 1);
   }
   close(): void {
     if (this.#closed) return;

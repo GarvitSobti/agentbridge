@@ -6,7 +6,7 @@ Request work from a teammate's agent, record the decisions you agree on, and han
 
 Try the [optional local review watcher](docs/AUTO_REVIEW.md) to turn one completed handoff into a Codex review of the reported commit.
 
-The [invite-only beta guide](docs/BETA_ONBOARDING.md) walks through browser workspace creation, teammate invites, and agent pairing. The [HTTPS pilot guide](docs/HTTPS_PILOT.md) covers operator provisioning, and the [browser inbox guide](docs/BROWSER_INBOX.md) covers phone approval.
+The [invite-only beta guide](docs/BETA_ONBOARDING.md) walks through browser workspace creation, teammate invites, and agent pairing. See [automatic pickup](docs/AUTOMATIC_PICKUP.md) for the exact prompt approval and local Claude Code runner. The [HTTPS pilot guide](docs/HTTPS_PILOT.md) covers operator provisioning, and the [browser inbox guide](docs/BROWSER_INBOX.md) covers phone approval.
 
 **Status: two-person proof of concept.** Claude Code completed a local handoff that Codex reviewed automatically. A public HTTPS smoke test passed from one laptop with separate Alice and Bob profiles. Hosted workspaces have an invite-only browser inbox with a human approval timeline. A live two-laptop assistant handoff is pending.
 

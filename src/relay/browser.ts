@@ -110,7 +110,7 @@ export function createBrowserHandler(currentStore: () => SqliteStore | undefined
       if (url.pathname === '/workspace/api/decision') {
         requireSession();
         const input = object(await body(request));
-        if (input.type !== 'request.accept' && input.type !== 'request.decline') {
+        if (input.type !== 'request.accept' && input.type !== 'request.decline' && input.type !== 'request.approve_pickup') {
           throw new HttpError(400, 'INVALID_INPUT', 'Choose accept or decline.');
         }
         reply(response, 200, store.execute(requireSession(), input));

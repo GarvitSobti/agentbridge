@@ -93,9 +93,11 @@ export function parseCommand(value: unknown): Command {
   const extra: Record<string, string[]> = {
     'request.create': ['recipientId', 'title', 'body', 'references'],
     'request.accept': [], 'request.decline': [], 'request.start': [], 'request.cancel': [],
+    'request.approve_pickup': ['promptHash'], 'request.claim_pickup': ['promptHash'],
+    'request.fail_pickup': ['pickupRunId', 'reason'],
     'request.reply': ['body'], 'decision.propose': ['decisionId', 'text', 'references'],
     'decision.agree': ['decisionId', 'revision', 'contentHash'],
-    'request.complete': ['branch', 'commit', 'summary', 'checks', 'references'],
+    'request.complete': ['branch', 'commit', 'summary', 'checks', 'references', 'pickupRunId'],
   };
   requireThat(typeof kind === 'string' && Object.hasOwn(extra, kind), 'INVALID_INPUT', 'Unknown command type.');
   const command = object(value, kind === 'request.create' ? ['type', 'retryKey', ...extra[kind]!] : [...common, ...extra[kind]!], 'command');
@@ -105,6 +107,13 @@ export function parseCommand(value: unknown): Command {
   const base = { retryKey, requestId: identifier(command.requestId, 'request ID'), expectedVersion: positiveInteger(command.expectedVersion, 'expected version') };
   switch (kind) {
     case 'request.accept': case 'request.decline': case 'request.start': case 'request.cancel': return { type: kind, ...base };
+    case 'request.approve_pickup': case 'request.claim_pickup': {
+      const promptHash = text(command.promptHash, 'prompt hash', 64);
+      requireThat(/^[a-f0-9]{64}$/.test(promptHash), 'INVALID_INPUT', 'Use the reviewed prompt SHA-256 digest.');
+      return { type: kind, ...base, promptHash };
+    }
+    case 'request.fail_pickup': return { type: kind, ...base,
+      pickupRunId: identifier(command.pickupRunId, 'pickup run ID'), reason: text(command.reason, 'pickup failure', 500) };
     case 'request.reply': return { type: kind, ...base, body: text(command.body, 'body') };
     case 'decision.propose': return { type: kind, ...base, text: text(command.text, 'decision text'), references: references(command.references),
       ...(command.decisionId === undefined ? {} : { decisionId: identifier(command.decisionId, 'decision ID') }) };
@@ -119,7 +128,8 @@ export function parseCommand(value: unknown): Command {
         && branch.split('/').every(part => part !== '' && !part.startsWith('.') && !part.endsWith('.') && !part.endsWith('.lock')),
       'INVALID_INPUT', 'Branch must be a valid named Git branch.');
       return { type: kind, ...base, branch, commit: commit(command.commit), summary: text(command.summary, 'summary'),
-        checks: checks(command.checks), references: references(command.references) };
+        checks: checks(command.checks), references: references(command.references),
+        ...(command.pickupRunId === undefined ? {} : { pickupRunId: identifier(command.pickupRunId, 'pickup run ID') }) };
     }
     default: throw new DomainError('INVALID_INPUT', 'Unknown command type.');
   }

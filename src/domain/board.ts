@@ -1,5 +1,6 @@
 import type { BoardState, Command, CommandResult, DomainEvent, Environment, Principal, WorkRequest } from './types.ts';
 import { authorize, canonical, copy, identifier, parseCommand, requireThat, validateWorkspace } from './validation.ts';
+import { agreementsReady, pickupPrompt } from './pickup.ts';
 
 export { DomainError } from './validation.ts';
 export type * from './types.ts';
@@ -17,19 +18,16 @@ function active(request: WorkRequest): void {
   requireThat(!['completed', 'declined', 'cancelled'].includes(request.status), 'INVALID_STATE', 'Terminal requests are read-only. Create a new request for further work.');
 }
 function requireAgreement(request: WorkRequest, state: BoardState): void {
-  for (const decision of request.decisions) {
-    const latest = decision.revisions.at(-1)!;
-    requireThat(state.workspace.participants.every(id => latest.acknowledgments.some(ack => ack.participantId === id)),
-      'DECISION_NOT_AGREED', 'Both participants must acknowledge each current decision revision before starting or completing work.');
-  }
+  requireThat(agreementsReady(request, state.workspace), 'DECISION_NOT_AGREED',
+    'Both participants must acknowledge each current decision revision before approving pickup, starting or completing work.');
 }
 function policy(request: WorkRequest, actor: Principal, command: Command): void {
   const recipient = actor.participantId === request.recipientId;
   const human = actor.role === 'human';
   switch (command.type) {
-    case 'request.accept': case 'request.decline':
+    case 'request.accept': case 'request.decline': case 'request.approve_pickup':
       requireThat(human && recipient, 'FORBIDDEN', 'Only the addressed human may accept or decline work.'); break;
-    case 'request.start': case 'request.complete':
+    case 'request.start': case 'request.complete': case 'request.claim_pickup': case 'request.fail_pickup':
       requireThat(!human && recipient, 'FORBIDDEN', 'Only the assigned participant\'s agent may start or report completion.'); break;
     case 'request.cancel':
       requireThat(human && (request.status !== 'pending' || actor.participantId === request.requesterId),
@@ -80,8 +78,29 @@ export function execute(state: BoardState, principal: unknown, input: unknown, e
       case 'request.accept': case 'request.decline':
         requireThat(request.status === 'pending', 'INVALID_STATE', 'Only pending requests may be accepted or declined.');
         request.status = command.type === 'request.accept' ? 'accepted' : 'declined'; break;
+      case 'request.approve_pickup': {
+        requireThat(request.status === 'pending' || request.status === 'accepted', 'INVALID_STATE', 'Approve pickup before work starts.');
+        requireAgreement(request, next);
+        const prompt = pickupPrompt(request, next.workspace);
+        requireThat(prompt && environment.sha256(prompt) === command.promptHash, 'VERSION_CONFLICT', 'Read and approve the current pickup prompt.');
+        request.pickup = { prompt, promptHash: command.promptHash, approvedVersion: request.version + 1 };
+        request.status = 'accepted';
+        break;
+      }
+      case 'request.claim_pickup':
+        requireThat(request.status === 'accepted' && request.pickup?.approvedVersion === request.version
+          && request.pickup.promptHash === command.promptHash && !request.pickup.runId, 'INVALID_STATE', 'Only a current human-approved prompt can be claimed.');
+        request.pickup.runId = command.retryKey;
+        request.status = 'in_progress';
+        break;
+      case 'request.fail_pickup':
+        requireThat(request.status === 'in_progress' && request.pickup?.runId === command.pickupRunId && !request.pickup.failure,
+          'INVALID_STATE', 'The selected pickup is not active.');
+        request.pickup.failure = command.reason;
+        break;
       case 'request.start':
         requireThat(request.status === 'accepted', 'INVALID_STATE', 'Work must be accepted by the addressed human before it can start.');
+        requireThat(request.pickup?.approvedVersion !== request.version, 'INVALID_STATE', 'Claim the approved prompt through the local pickup runner.');
         requireAgreement(request, next);
         request.status = 'in_progress'; break;
       case 'request.cancel': request.status = 'cancelled'; break;
@@ -113,6 +132,10 @@ export function execute(state: BoardState, principal: unknown, input: unknown, e
       case 'request.complete':
         requireThat(request.status === 'in_progress', 'INVALID_STATE', 'Only work in progress can be reported completed.');
         requireAgreement(request, next);
+        if (request.pickup?.runId) {
+          requireThat(request.pickup.runId === command.pickupRunId && !request.pickup.failure
+            && request.version === request.pickup.approvedVersion + 1, 'INVALID_STATE', 'Pickup can complete only under its claimed review version.');
+        }
         request.completion = { repository: next.workspace.repository, branch: command.branch, commit: command.commit,
           summary: command.summary, checks: command.checks, references: command.references,
           reporter: actor, reportedAt: at, verification: 'self_reported' };

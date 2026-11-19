@@ -26,6 +26,8 @@ The next milestone is an internal rehearsal of a complete handoff using a fresh 
 - [x] Land the browser inbox and record the phone evidence in [PR #8](https://github.com/GarvitSobti/agentbridge/pull/8).
 - [x] Add a synthetic fixture, a repeatable rehearsal, and setup diagnostics.
 - [x] Add invite-only workspace creation, teammate invitation, and browser-guided agent pairing.
+- [x] Add exact prompt review and one-shot local automatic pickup.
+- [ ] Run the approved pickup with a signed-in Claude Code installation.
 - [x] Rehearse stale approval, a discarded write receipt, relay restart, and exact-commit fetch recovery.
 - [x] Rehearse an approval connection drop at phone width, including reload and stale-version recovery.
 - [ ] Repeat interrupted approval on a physical phone during the hosted pilot.

@@ -24,6 +24,7 @@
     "relay:credential": "node src/cli/relay.ts credential",
     "bridge": "node src/cli/bridge.ts",
     "mcp": "node src/mcp/stdio.ts",
+    "pickup:watch": "node src/cli/pickup-watch.ts",
     "review:watch": "node src/cli/review-watch.ts"
   },
   "devDependencies": {

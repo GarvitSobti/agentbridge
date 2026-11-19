@@ -1,6 +1,6 @@
 import { relayEndpoint, LocalError, type Profile } from '../cli/profiles.ts';
 
-const allowedWrites = new Set(['request.create', 'request.reply', 'decision.propose', 'decision.agree', 'request.start', 'request.complete']);
+const allowedWrites = new Set(['request.create', 'request.reply', 'decision.propose', 'decision.agree', 'request.start', 'request.complete', 'request.claim_pickup', 'request.fail_pickup']);
 export class AgentRelayError extends Error {
   readonly code: string;
   readonly retryKey?: string;

@@ -175,6 +175,16 @@ Use statuses Proposed, Accepted, Rejected, and Superseded. Preserve old decision
 - Consequences: The operator maintains a relay and data directory per pilot workspace and can reissue browser access or revoke an agent credential. Connector setup registers a local MCP server. The paired roster reflects registered credentials.
 - Verification: The HTTPS beta suite covers owner-link rotation, one workspace creation, teammate invitation, scoped pairing and replay, two MCP adapters, browser approval, and persistence after restart.
 
+## ADR-017. Execute one human-reviewed prompt through a local pickup runner
+
+- Date: 2026-11-20
+- Status: Accepted
+- Context: The two paired assistants completed the live beta handoff. The assignee wants to review the exact prompt in the browser before the receiving assistant picks it up.
+- Decision: Generate a deterministic prompt from the task, references, and current contract. Store the prompt and its digest with the recipient’s versioned approval. The local runner claims the same version atomically before starting Claude Code. It starts a bounded file-edit session in a new worktree, verifies the edits and records a local commit.
+- Rationale: The recipient controls the work by reviewing the prompt and arming a runner for their checkout. Existing relay, role, retry and decision rules remain the source of truth.
+- Consequences: The claim survives restart and the runner can handle one task per invocation. An interruption leaves the worktree and claim available for inspection. The runner reports its Git check and labels contract testing separately.
+- Verification: Tests exercise the browser approval request, exact digest, conflicting version, restart, competing claims, and exact local commit. The signed-in Claude Code round trip is a live pilot check.
+
 ## New ADR template
 
 ```text

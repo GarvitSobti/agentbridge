@@ -27,7 +27,7 @@ Do not depend on GitHub availability to exchange a message. Git repository ident
 | Human acceptance | Only the addressed human can accept or decline; a peer or agent credential cannot impersonate them. |
 | Clarification | Participants can exchange replies without silently accepting work or altering an agreed decision. |
 | Decisions | Proposals have revisions; agreement records the exact revision and both participants. Editing creates a new revision needing fresh agreement. |
-| Agent pickup | An agent explicitly reads accepted work; receiving a message does not launch a process. |
+| Agent pickup | A recipient can pick up accepted work manually or review the exact prompt and queue one local Claude Code run. The browser approval binds the prompt and request version. |
 | Completion | The assigned agent can report a summary and exact branch/commit/check references; the report is labeled self-reported. |
 | Opt-in review | The requester can start a local watcher for one outgoing request. A recorded completion can trigger one Codex review of its local commit diff. The human decides what to do with the review. |
 | Persistence | Requests, messages, decisions, and lifecycle events survive a relay restart. |
@@ -38,7 +38,7 @@ Do not depend on GitHub availability to exchange a message. Git repository ident
 
 - Automatic dependency discovery, semantic change detection, file locks, or conflict prediction.
 - Automated Git writes, PR creation, branch stacking, merging, or deployment. The review watcher may read an exact commit diff from a local checkout selected by the requester.
-- Remote command execution, editing another machine, or remotely launching or resuming another participant's agent.
+- Remote command execution and control of another participant’s assistant. Automatic pickup runs through the recipient’s opt-in local runner.
 - Unbounded polling or autonomous negotiation loops.
 - Guaranteed delivery into an active assistant without an inbox check.
 - A replacement editor, shared model runtime, full chat platform, or general multi-agent framework.

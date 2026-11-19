@@ -117,15 +117,18 @@ test('a producer MCP completion routes the exact commit once, even across watche
   await git('add', 'health.mjs');
   await git('-c', 'user.name=Test', '-c', 'user.email=test@example.invalid', '-c', 'commit.gpgsign=false', 'commit', '--quiet', '-m', 'Set severity values');
   const commit = await git('rev-parse', 'HEAD');
-  const ownerOverride = process.env.GIT_TEST_ASSUME_DIFFERENT_OWNER;
-  try {
-    process.env.GIT_TEST_ASSUME_DIFFERENT_OWNER = '1';
-    await assert.rejects(readCommitDiff(repo, commit), { code: 'REPOSITORY_UNTRUSTED' });
-    assert.match(await readCommitDiff(repo, commit, true), /\+export const severity/);
-    await assert.rejects(readCommitDiff(repo, commit), { code: 'REPOSITORY_UNTRUSTED' });
-  } finally {
-    if (ownerOverride === undefined) delete process.env.GIT_TEST_ASSUME_DIFFERENT_OWNER;
-    else process.env.GIT_TEST_ASSUME_DIFFERENT_OWNER = ownerOverride;
+  // The simulated owner check reproduces this problem on Git for Windows.
+  if (process.platform === 'win32') {
+    const ownerOverride = process.env.GIT_TEST_ASSUME_DIFFERENT_OWNER;
+    try {
+      process.env.GIT_TEST_ASSUME_DIFFERENT_OWNER = '1';
+      await assert.rejects(readCommitDiff(repo, commit), { code: 'REPOSITORY_UNTRUSTED' });
+      assert.match(await readCommitDiff(repo, commit, true), /\+export const severity/);
+      await assert.rejects(readCommitDiff(repo, commit), { code: 'REPOSITORY_UNTRUSTED' });
+    } finally {
+      if (ownerOverride === undefined) delete process.env.GIT_TEST_ASSUME_DIFFERENT_OWNER;
+      else process.env.GIT_TEST_ASSUME_DIFFERENT_OWNER = ownerOverride;
+    }
   }
 
   let request = data(await call(alice, 'agentbridge_request', task('auto-review'))).request;

@@ -19,7 +19,8 @@
     "relay": "node src/cli/relay.ts start",
     "relay:credential": "node src/cli/relay.ts credential",
     "bridge": "node src/cli/bridge.ts",
-    "mcp": "node src/mcp/stdio.ts"
+    "mcp": "node src/mcp/stdio.ts",
+    "review:watch": "node src/cli/review-watch.ts"
   },
   "devDependencies": {
     "@modelcontextprotocol/client": "2.4.0",

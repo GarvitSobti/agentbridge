@@ -132,6 +132,16 @@ Use statuses Proposed, Accepted, Rejected, and Superseded. Preserve old decision
 - Verification: Official SDK clients drive actual stdio subprocesses against a real relay, including a full synthetic lifecycle and separate human-profile CLI acceptance. Tests cover schema rejection, forged metadata, effective role changes, revocation, uncertain-write retry semantics, relay restart, untrusted peer text, redirects, size limits, and sanitized errors. These establish protocol behavior, not actual Codex/Claude compatibility, human presence, or a two-machine pilot.
 - Sources: [Official TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk), [server tools](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/docs/servers/tools.md), [Codex MCP configuration](https://developers.openai.com/codex/mcp).
 
+## ADR-013: Opt in to review one completed handoff
+
+- Date: 2026-11-19
+- Status: Accepted
+- Context: In the two-Codex lab the requester had to prompt their assistant to read a completion that was already recorded.
+- Decision: Add a requester-side watcher for a single explicitly selected request and local checkout. Launch a dedicated Codex review turn using the completion commit's bounded diff and current decision record. Reserve one automatic attempt on local disk and save the review separately.
+- Alternatives: Inject into the interactive Codex session with its existing tools. Subscribe to every completion in a workspace. Implement client-specific push servers.
+- Rationale: A dedicated turn has a small input and clear permissions. Selecting one request limits activation and lets a completion from any MCP producer trigger the same flow. Polling the terminal request supports catch-up without a second event store.
+- Consequences: The recipient supplies a local checkout containing the commit. A crash after the reservation leaves an uncertain outcome for the human to inspect. Live model completion and mixed-client validation are separate from SDK tests.
+
 ## New ADR template
 
 ```text

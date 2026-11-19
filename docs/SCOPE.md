@@ -1,8 +1,8 @@
 # Product scope
 
-Status: accepted proof-of-concept boundaries. Updated: 2026-11-18.
+Status: accepted proof-of-concept boundaries. Updated: 2026-11-19.
 
-Delivered so far: domain rules, persistence, loopback HTTP/terminal workflow, and local stdio MCP tools with official SDK protocol tests. Actual assistant pairing, separate-machine access, ownership configuration, and the measured two-person pilot remain outside the completed slices. See [MCP setup](MCP.md) and [the roadmap](ROADMAP.md).
+Delivered so far: domain rules, persistence, loopback HTTP/terminal workflow, and local stdio MCP tools. Two local Codex sessions completed a coding handoff and recovered after an interface revision. The optional [review watcher](AUTO_REVIEW.md) handles one outgoing request at a time. Mixed-client delivery, separate-machine access, ownership configuration, and the measured two-person pilot remain open. See [MCP setup](MCP.md) and [the roadmap](ROADMAP.md).
 
 ## Problem
 
@@ -29,6 +29,7 @@ Do not depend on GitHub availability to exchange a message. Git repository ident
 | Decisions | Proposals have revisions; agreement records the exact revision and both participants. Editing creates a new revision needing fresh agreement. |
 | Agent pickup | An agent explicitly reads accepted work; receiving a message does not launch a process. |
 | Completion | The assigned agent can report a summary and exact branch/commit/check references; the report is labeled self-reported. |
+| Opt-in review | The requester can start a local watcher for one outgoing request. A recorded completion can trigger one Codex review of its local commit diff. The human decides what to do with the review. |
 | Persistence | Requests, messages, decisions, and lifecycle events survive a relay restart. |
 | Offline handoff | Pending messages remain retrievable after a participant disconnects and returns. |
 | Human visibility | A terminal interface shows requests, approvals, decisions, and completion details. |
@@ -36,8 +37,8 @@ Do not depend on GitHub availability to exchange a message. Git repository ident
 ## Explicit exclusions
 
 - Automatic dependency discovery, semantic change detection, file locks, or conflict prediction.
-- Automated Git operations, PR creation, branch stacking, merging, or deployment.
-- Remote command execution, editing another machine, or launching or resuming another participant's agent.
+- Automated Git writes, PR creation, branch stacking, merging, or deployment. The review watcher may read an exact commit diff from a local checkout selected by the requester.
+- Remote command execution, editing another machine, or remotely launching or resuming another participant's agent.
 - Unbounded polling or autonomous negotiation loops.
 - Guaranteed delivery into an active assistant without an inbox check.
 - A replacement editor, shared model runtime, full chat platform, or general multi-agent framework.

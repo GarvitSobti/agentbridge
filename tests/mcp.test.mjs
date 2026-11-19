@@ -13,6 +13,9 @@ import { initializeLocal, databasePath, readConfig } from '../src/cli/local.ts';
 import { loadProfile } from '../src/cli/profiles.ts';
 import { SqliteStore } from '../src/storage/sqlite-store.ts';
 import { startRelay } from '../src/relay/server.ts';
+import { AgentRelayClient } from '../src/mcp/relay-client.ts';
+import { checkHandoff } from '../src/review/handoff.ts';
+import { readCommitDiff } from '../src/review/codex.ts';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const run = promisify(execFile);
@@ -101,6 +104,58 @@ test('two stdio clients coordinate a revisioned handoff while approval stays in 
   assert.equal(current.status, 'completed');
   assert.equal(current.completion.verification, 'self_reported');
   assert.equal(data(await call(alice, 'agentbridge_events', { after: created.event.cursor })).events.length, 7);
+});
+
+test('a producer MCP completion routes the exact commit once, even across watcher races and relay restart', { timeout: 30_000 }, async t => {
+  const f = await fixture(t);
+  const alice = await f.connect('alice-agent'); const bob = await f.connect('bob-agent');
+  const repo = path.join(f.home, 'fixture');
+  fs.mkdirSync(repo);
+  const git = async (...args) => (await run('git', args, { cwd: repo, timeout: 5_000 })).stdout.trim();
+  await git('init', '--quiet');
+  fs.writeFileSync(path.join(repo, 'health.mjs'), "export const severity = ['low', 'medium', 'high'];\n");
+  await git('add', 'health.mjs');
+  await git('-c', 'user.name=Test', '-c', 'user.email=test@example.invalid', '-c', 'commit.gpgsign=false', 'commit', '--quiet', '-m', 'Set severity values');
+  const commit = await git('rev-parse', 'HEAD');
+
+  let request = data(await call(alice, 'agentbridge_request', task('auto-review'))).request;
+  const options = {
+    relay: new AgentRelayClient(f.relay.url, loadProfile(f.home, 'alice-agent')),
+    expected: { workspaceId: f.config.workspace.id, repository: f.config.workspace.repository, participantId: 'alice', requestId: request.id },
+    stateDirectory: path.join(f.home, 'reviews'),
+    getDiff: sha => readCommitDiff(repo, sha),
+    review: async input => {
+      reviewed++;
+      assert.equal(input.commit, commit);
+      assert.equal(input.requestId, request.id);
+      assert.match(input.diff, /\+export const severity/);
+      assert.deepEqual(input.reportedChecks, [{ command: 'producer test', outcome: 'passed' }]);
+      return 'Fixture review for ' + commit;
+    },
+  };
+  let reviewed = 0;
+  assert.equal((await checkHandoff(options)).status, 'waiting');
+  await assert.rejects(checkHandoff({ ...options, relay: new AgentRelayClient(f.relay.url, loadProfile(f.home, 'bob-agent')),
+    expected: { ...options.expected, participantId: 'bob' } }), { code: 'REVIEW_NOT_OWNED' });
+  request = await f.humanAccept(request);
+  request = data(await call(bob, 'agentbridge_start', { requestId: request.id, expectedVersion: request.version, retryKey: 'auto-start' })).request;
+  const reported = data(await call(bob, 'agentbridge_complete', {
+    requestId: request.id, expectedVersion: request.version, retryKey: 'auto-complete', branch: 'lab/bob', commit,
+    summary: 'Severity values added.', checks: [{ command: 'producer test', outcome: 'passed' }],
+  })).request;
+  assert.equal(reported.status, 'completed');
+  await assert.rejects(checkHandoff({ ...options, getDiff: sha => readCommitDiff(repo, sha.slice(0, -1) + (sha.endsWith('0') ? '1' : '0')) }), { code: 'COMMIT_UNAVAILABLE' });
+  assert.ok(!fs.existsSync(options.stateDirectory));
+
+  const results = await Promise.all([checkHandoff(options), checkHandoff(options)]);
+  assert.ok(results.some(result => result.status === 'reviewed'));
+  assert.equal(reviewed, 1);
+  await f.restart();
+  const saved = await checkHandoff(options);
+  assert.equal(saved.status, 'reviewed');
+  assert.equal(saved.result, 'Fixture review for ' + commit);
+  assert.equal(reviewed, 1);
+  assert.equal((await git('status', '--porcelain')).length, 0);
 });
 
 test('human credentials and human credentials relabeled as agent are rejected at startup', { timeout: 20_000 }, async t => {

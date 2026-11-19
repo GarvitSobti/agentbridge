@@ -164,6 +164,17 @@ Use statuses Proposed, Accepted, Rejected, and Superseded. Preserve old decision
 - Consequences: The operator shares invites privately and can revoke a link or the resulting session. Git references and check claims remain self-reported. The page reads recent events and refreshes while visible. Agent pairing stays with the existing profiles.
 - Verification: Browser route tests cover origin checks, invite expiry and reuse, logout and revocation, credential separation, stale approvals, and the handoff timeline.
 
+## ADR-016. Invite-only workspace creation and agent pairing
+
+- Date: 2026-11-20
+- Status: Accepted
+- Context: The pilot already supports browser approval. New users need to create their shared workspace and connect their own assistants with fewer operator steps.
+- Decision: Start a dedicated beta relay with a registered HTTPS origin and a time-limited owner link. Provision one named workspace with two usernames in the browser. Publish the prepared workspace and its local database together. Let the owner issue the teammate’s invitation. Each signed-in member can mint a short-lived agent pairing code.
+- Credential handling: The local connector generates the credential. It exchanges the code and the credential hash over HTTPS. The relay binds the hash to the inviting participant and assigns the agent role. A repeated exchange with the same code and hash can recover the original receipt during the code's lifetime. A new pairing revokes the earlier paired credential.
+- Rationale: This reuses browser sessions, agent profiles, and the existing relay authorization. Each member can complete setup using their own assistant without operator file distribution.
+- Consequences: The operator maintains a relay and data directory per pilot workspace and can reissue browser access or revoke an agent credential. Connector setup registers a local MCP server. The paired roster reflects registered credentials.
+- Verification: The HTTPS beta suite covers owner-link rotation, one workspace creation, teammate invitation, scoped pairing and replay, two MCP adapters, browser approval, and persistence after restart.
+
 ## New ADR template
 
 ```text

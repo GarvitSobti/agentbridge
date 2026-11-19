@@ -1,4 +1,5 @@
 import { approvalState, readApproval, saveApproval } from './approval.js';
+import { bindOnboarding } from './onboarding.js';
 
 const byId = id => document.getElementById(id);
 const gate = byId('gate');
@@ -17,7 +18,9 @@ const refreshButton = byId('refresh');
 const signOut = byId('sign-out');
 const feedback = byId('feedback');
 
-let invite = new URLSearchParams(location.hash.slice(1)).get('invite');
+const fragment = new URLSearchParams(location.hash.slice(1));
+let invite = fragment.get('invite');
+const ownerInvite = fragment.get('owner');
 if (location.hash) history.replaceState(null, '', location.pathname);
 
 const states = {
@@ -89,7 +92,11 @@ async function api(route, { data, signal } = {}) {
   return result;
 }
 
+const onboarding = bindOnboarding(api, () => refresh());
+
 function showGate(message, canRetry = false) {
+  onboarding.reset();
+  byId('gate-title').textContent = 'Workspace inbox';
   view = undefined;
   selectedId = undefined;
   decisionNote = undefined;
@@ -183,15 +190,19 @@ function completionFor(completion) {
 
 function renderDetail(snapshot) {
   const { request, events, participant } = snapshot;
-  const signature = JSON.stringify([participant, request, events]);
+  const signature = JSON.stringify([participant, request, events, request ? null : snapshot.setup]);
   if (signature === detailSignature) return;
   detailSignature = signature;
   const focusInside = summary.contains(document.activeElement) || historyPanel.contains(document.activeElement);
   summary.replaceChildren();
   historyPanel.replaceChildren();
   if (!request) {
-    summary.append(element('h2', 'No requests yet', 'request-title'),
-      element('p', 'New handoffs from your agents will appear here.', 'detail-meta'));
+    let message = 'New handoffs from your agents will appear here.';
+    if (snapshot.setup?.paired.length === 2) {
+      const teammate = snapshot.setup.owner === participant ? snapshot.setup.teammate : snapshot.setup.owner;
+      message = 'Open your assistant and ask it to send an Agent Bridge request to ' + teammate + '.';
+    }
+    summary.append(element('h2', 'No requests yet', 'request-title'), element('p', message, 'detail-meta'));
     return;
   }
   const heading = element('h2', request.title, 'request-title');
@@ -299,6 +310,8 @@ async function refresh({ focus = false } = {}) {
     account.hidden = false;
     byId('identity').textContent = view.participant;
     byId('repo-name').textContent = view.workspace.repository;
+    byId('workspace-title').textContent = view.workspace.name || 'Workspace inbox';
+    onboarding.render(view);
     selectedId ??= view.request?.id;
 
     renderList(view);
@@ -433,9 +446,14 @@ document.addEventListener('visibilitychange', backgroundRefresh);
 window.addEventListener('online', backgroundRefresh);
 window.addEventListener('hashchange', () => {
   // A new invite on the same URL otherwise only changes the fragment.
-  if (new URLSearchParams(location.hash.slice(1)).get('invite')) location.reload();
+  const link = new URLSearchParams(location.hash.slice(1));
+  if (link.get('invite') || link.get('owner')) location.reload();
 });
 setInterval(backgroundRefresh, 5_000);
 
-if (invite) showGate('You have an invite to this workspace.');
+if (ownerInvite) {
+  showGate('Choose the repository and the two people doing the handoff.');
+  byId('gate-title').textContent = 'Create workspace';
+  onboarding.start(ownerInvite);
+} else if (invite) showGate('You have an invite to this workspace.');
 else void refresh();

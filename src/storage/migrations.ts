@@ -72,4 +72,20 @@ export const MIGRATIONS = [
       ) STRICT;
     `,
   },
+  {
+    version: 4,
+    sql: `
+      CREATE TABLE agent_pairs (
+        workspace_id TEXT NOT NULL,
+        participant_id TEXT NOT NULL,
+        code_hash TEXT UNIQUE,
+        expires_at INTEGER NOT NULL,
+        redeemed INTEGER NOT NULL DEFAULT 0 CHECK(redeemed IN (0, 1)),
+        credential_id TEXT,
+        PRIMARY KEY(workspace_id, participant_id),
+        FOREIGN KEY(workspace_id) REFERENCES workspaces(id),
+        FOREIGN KEY(credential_id) REFERENCES credentials(id)
+      ) STRICT;
+    `,
+  },
 ] as const;

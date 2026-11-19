@@ -10,6 +10,7 @@ export interface Principal {
 
 export interface Workspace {
   id: string;
+  name?: string;
   repository: string;
   participants: [string, string];
 }

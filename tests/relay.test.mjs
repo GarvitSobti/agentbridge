@@ -70,7 +70,7 @@ test('schema v1 upgrades to the current schema without changing saved work', t =
   const request = store.execute({ workspaceId: workspace.id, participantId: 'alice', role: 'agent' }, create()).request;
   store.close();
   const db = new DatabaseSync(filename);
-  try { db.exec('DROP TABLE browser_access; DROP TABLE credentials; PRAGMA user_version = 1'); } finally { db.close(); }
+  try { db.exec('DROP TABLE agent_pairs; DROP TABLE browser_access; DROP TABLE credentials; PRAGMA user_version = 1'); } finally { db.close(); }
   store = new SqliteStore(filename, workspace);
   try {
     assert.deepEqual(store.getRequest({ workspaceId: workspace.id, participantId: 'alice', role: 'agent' }, request.id), request);

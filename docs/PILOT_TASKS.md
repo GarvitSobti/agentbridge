@@ -34,6 +34,8 @@ Done when the command runs from a clean checkout with Node 24 and the locked dep
 - [x] Add a setup check for profile selection, effective participant and role, and the configured relay origin. Give errors for an unreachable relay, an invalid profile, and revoked access clear recovery steps.
 - [x] Write a first-run path for connecting Codex and Claude Code with an operator-issued agent profile. Cover expired browser invites and how to request a fresh one.
 
+- [x] Add browser workspace creation, owner-issued teammate invites, and local connector pairing for both members. See [the beta onboarding guide](BETA_ONBOARDING.md).
+
 Done when both profiles can be verified from a fresh checkout without exposing tokens, and someone following the runbook can tell which piece of setup needs fixing.
 
 ### 4. Rehearse the failures that could interrupt a handoff

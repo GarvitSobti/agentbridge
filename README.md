@@ -4,6 +4,8 @@
 
 Request work from a teammate's agent, record the decisions you agree on, and hand back a specific result while each developer stays in control of their own machine.
 
+Try the [optional local review watcher](docs/AUTO_REVIEW.md) to turn one completed handoff into a Codex review of the reported commit.
+
 **Status: local relay and MCP prototype.** A persistent authenticated relay serves terminal clients and a stdio MCP adapter with ten agent-scoped tools. Separate human and agent profiles enforce task approval roles. Official SDK protocol tests pass; a real Codex/Claude handoff and cross-machine access remain unverified. There is no published package. The working name is Agent Bridge.
 
 [Scope](docs/SCOPE.md) · [Architecture](docs/ARCHITECTURE.md) · [Decisions](docs/DECISIONS.md) · [Roadmap](docs/ROADMAP.md) · [Contributing](CONTRIBUTING.md)

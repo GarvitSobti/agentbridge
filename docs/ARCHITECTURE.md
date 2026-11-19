@@ -1,6 +1,6 @@
 # Architecture
 
-Status: domain, SQLite persistence, loopback relay, terminal clients, and stdio MCP adapter are implemented. Actual assistant pairing and cross-machine operation remain unverified. See [the decisions](DECISIONS.md), [domain guide](DOMAIN.md), [storage guide](STORAGE.md), [local run guide](LOCAL_RELAY.md), and [MCP guide](MCP.md).
+Status: domain, SQLite persistence, loopback relay, terminal clients, stdio MCP adapter, and a local review watcher are implemented. The lab has exercised two real Codex sessions. Mixed-client and cross-machine operation remain unverified. See [the decisions](DECISIONS.md), [domain guide](DOMAIN.md), [storage guide](STORAGE.md), [local run guide](LOCAL_RELAY.md), and [MCP guide](MCP.md).
 
 ## System shape
 
@@ -37,6 +37,7 @@ flowchart TB
 | SQLite store | Persist current state, messages, agreement revisions, and lifecycle events | One relay instance; local database, not a shared network filesystem |
 | MCP adapter | Expose allowed inbox, request, reply, agreement, and completion actions | Agent credential cannot accept work or obtain human credentials |
 | Human CLI | Inspect and accept or decline incoming requests | Distinct human credential, kept out of the assistant's configuration |
+| Review watcher | Wait for one selected completion and prepare a local Git diff for a Codex review | Requester opts in on their machine. The relay stays outside the launch and review flow. |
 
 Implementation language: TypeScript. Runtime: Node.js 24.x. The domain has no platform imports; trusted adapters supply IDs, time, and SHA-256 hashing. The store uses Node's built-in SQLite, and the runtime helper supplies Node crypto and time defaults. Node type definitions are development tooling. Actual compatibility with the two participants' assistant clients and operating systems must still be verified.
 
@@ -73,7 +74,9 @@ Use database transactions for each state change and event append. Do not impleme
 
 ## Delivery and reconnects
 
-The MCP events tool accepts an explicit `after` cursor and bounded page limit. The caller saves its cursor; the adapter does not poll, persist a cursor, or launch background work. Reading a message does not accept a task. Offline messages remain stored. No WebSocket or assistant-specific hook is required for the initial proof of concept. Add push delivery only after measuring the limitations of explicit checks.
+The MCP events tool accepts an explicit `after` cursor and bounded page limit. The caller saves its cursor; the adapter does not poll, persist a cursor, or launch background work. Reading a message does not accept a task. Offline messages remain stored.
+
+The [local review watcher](AUTO_REVIEW.md) polls one selected request independently of MCP. The terminal request is the source of truth after reconnect. The watcher verifies requester ownership and reads a bounded diff for the exact reported commit from the selected checkout. An exclusive record in the private local directory reserves the attempt before the Codex subprocess starts. An interrupted attempt stays visible as uncertain. The review result remains local and separate from the terminal relay record.
 
 ## Trust and credentials
 

@@ -431,6 +431,10 @@ function backgroundRefresh() {
 }
 document.addEventListener('visibilitychange', backgroundRefresh);
 window.addEventListener('online', backgroundRefresh);
+window.addEventListener('hashchange', () => {
+  // A new invite on the same URL otherwise only changes the fragment.
+  if (new URLSearchParams(location.hash.slice(1)).get('invite')) location.reload();
+});
 setInterval(backgroundRefresh, 5_000);
 
 if (invite) showGate('You have an invite to this workspace.');

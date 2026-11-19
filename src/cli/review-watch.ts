@@ -7,11 +7,11 @@ import { AgentRelayClient, AgentRelayError } from '../mcp/relay-client.ts';
 import { checkHandoff } from '../review/handoff.ts';
 import { readCommitDiff, runCodexReview } from '../review/codex.ts';
 
-const usage = 'npm run review:watch -- --profile NAME --request ID --repo PATH [--home PATH] [--once]';
+const usage = 'npm run review:watch -- --profile NAME --request ID --repo PATH [--home PATH] [--once] [--trust-repo]';
 try {
   const { values } = parseArgs({ options: {
     profile: { type: 'string' }, request: { type: 'string' }, repo: { type: 'string' },
-    home: { type: 'string' }, once: { type: 'boolean' }, help: { type: 'boolean' },
+    home: { type: 'string' }, once: { type: 'boolean' }, help: { type: 'boolean' }, 'trust-repo': { type: 'boolean' },
   } });
   if (values.help) {
     console.log(usage);
@@ -34,7 +34,7 @@ try {
           relay,
           expected: { workspaceId: config.workspace.id, repository: config.workspace.repository, participantId: identity.participantId, requestId: request },
           stateDirectory: path.join(home, 'reviews'),
-          getDiff: commit => readCommitDiff(repository, commit),
+          getDiff: commit => readCommitDiff(repository, commit, values['trust-repo']),
           review: runCodexReview,
         });
         if (result.status !== 'waiting' || values.once || performance.now() >= deadline) {

@@ -4,7 +4,7 @@ Last updated: 2026-11-19
 
 ## Current position
 
-PRs #1 through #4 are merged. The review branch starts from main at `83edb7628bc883b58f42238edccfe6b8e4225257`. Two real Codex sessions on Windows completed a synthetic CRM coding handoff and a mid-task change of contract. Independent checks passed 21 combined tests and all 101 health scores after the revision. Mixed-provider and cross-machine handoffs remain open.
+PRs #1 through #5 are merged. The ownership fix starts from main at `0cbc42608d903a1d3643da870560256b3c6d4403`. Two real Codex sessions on Windows completed a synthetic CRM coding handoff and a mid-task change of contract. Independent checks passed 21 combined tests and all 101 health scores after the revision. Mixed-provider and cross-machine handoffs remain open.
 
 Working name: Agent Bridge. Repository: `GarvitSobti/agentbridge`. Owner: Garvit Sobti. MIT license. Unpublished package name: `agent-bridge`.
 
@@ -36,13 +36,14 @@ Working name: Agent Bridge. Repository: `GarvitSobti/agentbridge`. Owner: Garvit
 - Hosted check at commit `bbcc0cdecd677584317a15d8fe5d765f4d575cbe` passed documentation, strict TypeScript, all 74 then-current tests (including seven official SDK stdio tests), and both existing synthetic demos. [CI evidence](https://github.com/GarvitSobti/agentbridge/actions/runs/44318439552).
 - The final MCP PR passed 78 tests. The review slice passed `npm.cmd run check` on Windows with documentation, strict source checking, and 79 tests. The new test uses a real Git commit, an official SDK producer, and an injected reviewer. It covers requester scope, a missing commit, racing dispatch attempts, and local record reuse after relay restart.
 - Codex CLI 0.168.0 exposes the runner flags. The managed shell cannot resolve the interactive Codex profile home, and Claude Code is unavailable in this environment. The official SDK client stands in for the producer and the test reviewer stands in for the model.
+- The first signed-in replay stopped before review. Git could see the completion commit under the account that created the CRM worktree. The different-owner check reproduced Git's refusal and the narrow trust option allowed the exact diff read. The watcher now distinguishes repository failures from missing objects. The full 79-test check passed on Windows, including coverage that the exception applies only to the opted-in call.
 - Runtime: official server SDK 2.4.0 and Zod 4.6.5. Development: official client SDK 2.4.0, TypeScript 5.9.3, Node types 24.1.0. Registry resolutions and integrity are locked.
 - MCP tests use two SDK clients and scripted human-role CLI acceptance, without models. They do not verify actual assistant clients, prompt-injection resistance, human presence, or real code integration. Completion remains self-reported. Writer-kill tests do not simulate power/hardware failure.
 - Node 24.1.0 emits SQLite/type-stripping warnings. Type stripping does not replace TypeScript checking.
 
 ## Publication and workspace
 
-Public repo: https://github.com/GarvitSobti/agentbridge. Automatic review work lives on `feat/automatic-review`. The changes were prepared in the temporary checkout. The owner's lab is separate from the GitHub source and holds the synthetic fixture and local evidence.
+Public repo: https://github.com/GarvitSobti/agentbridge. The follow-up for review Git errors lives on `fix/review-git-ownership`. The owner's lab is separate from the GitHub source and holds the synthetic fixture and local evidence.
 
 ## Next task
 

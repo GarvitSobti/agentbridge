@@ -117,6 +117,16 @@ test('a producer MCP completion routes the exact commit once, even across watche
   await git('add', 'health.mjs');
   await git('-c', 'user.name=Test', '-c', 'user.email=test@example.invalid', '-c', 'commit.gpgsign=false', 'commit', '--quiet', '-m', 'Set severity values');
   const commit = await git('rev-parse', 'HEAD');
+  const ownerOverride = process.env.GIT_TEST_ASSUME_DIFFERENT_OWNER;
+  try {
+    process.env.GIT_TEST_ASSUME_DIFFERENT_OWNER = '1';
+    await assert.rejects(readCommitDiff(repo, commit), { code: 'REPOSITORY_UNTRUSTED' });
+    assert.match(await readCommitDiff(repo, commit, true), /\+export const severity/);
+    await assert.rejects(readCommitDiff(repo, commit), { code: 'REPOSITORY_UNTRUSTED' });
+  } finally {
+    if (ownerOverride === undefined) delete process.env.GIT_TEST_ASSUME_DIFFERENT_OWNER;
+    else process.env.GIT_TEST_ASSUME_DIFFERENT_OWNER = ownerOverride;
+  }
 
   let request = data(await call(alice, 'agentbridge_request', task('auto-review'))).request;
   const options = {
@@ -144,6 +154,7 @@ test('a producer MCP completion routes the exact commit once, even across watche
     summary: 'Severity values added.', checks: [{ command: 'producer test', outcome: 'passed' }],
   })).request;
   assert.equal(reported.status, 'completed');
+  await assert.rejects(readCommitDiff(path.dirname(repo), commit), { code: 'REPOSITORY_UNAVAILABLE' });
   await assert.rejects(checkHandoff({ ...options, getDiff: sha => readCommitDiff(repo, sha.slice(0, -1) + (sha.endsWith('0') ? '1' : '0')) }), { code: 'COMMIT_UNAVAILABLE' });
   assert.ok(!fs.existsSync(options.stateDirectory));
 

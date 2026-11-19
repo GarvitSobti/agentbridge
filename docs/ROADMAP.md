@@ -23,10 +23,11 @@ The next milestone is an internal rehearsal of a complete handoff using a fresh 
 
 - [x] Exercise the HTTPS relay with two participant identities on one laptop.
 - [x] Exercise invite sign-in, phone approval, and an automatic completion update through public HTTPS. The run used CLI profiles on the laptop and the browser on a physical phone.
-- [ ] Land the browser inbox after adding the phone evidence to [PR #8](https://github.com/GarvitSobti/agentbridge/pull/8).
+- [x] Land the browser inbox and record the phone evidence in [PR #8](https://github.com/GarvitSobti/agentbridge/pull/8).
 - [x] Add a synthetic fixture, a repeatable rehearsal, and setup diagnostics.
 - [x] Rehearse stale approval, a discarded write receipt, relay restart, and exact-commit fetch recovery.
-- [ ] Rehearse loss of the phone browser connection during an approval.
+- [x] Rehearse an approval connection drop at phone width, including reload and stale-version recovery.
+- [ ] Repeat interrupted approval on a physical phone during the hosted pilot.
 - [ ] Make the next action and recovery states clear in the inbox.
 
 Exit when a fresh checkout can run the fixture from setup through approval, completion, and review, and the same run can recover without duplicate work. Keep the rehearsal to one repository, two participants, and one relay.

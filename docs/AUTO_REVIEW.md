@@ -31,6 +31,12 @@ claude mcp add --transport stdio agentbridge -- node $adapter --profile bob-agen
 
 Add `--home PATH` after the profile for a custom relay. Start Claude Code in Bob's worktree, verify `agentbridge_identity` reports Bob, and follow the [MCP approval and completion flow](MCP.md). Claude Code configuration is documented in [Anthropic's MCP guide](https://code.claude.com/docs/en/mcp). The installed SDK test exercises this producer role with a separate stdio client. Live Claude-to-Codex delivery remains to be verified.
 
+## Use a known shared checkout
+
+If Git reports `REPOSITORY_UNTRUSTED` for a checkout you trust, set `--repo` to the worktree root and add `--trust-repo` when rerunning the watcher. The flag adds one exact `safe.directory` entry to the Git commands for that run. [Git ownership checks](https://git-scm.com/docs/git-config#Documentation/git-config.txt-safedirectory)
+
+A `REPOSITORY_UNAVAILABLE` error calls for checking the checkout path. If the watcher reports `GIT_UNAVAILABLE`, check that Git is on your PATH and the checkout still exists.
+
 ## Fetch a missing completion commit
 
 If the watcher reports `COMMIT_UNAVAILABLE`, confirm the assignee shared the reported branch through your usual Git remote. From the requester’s checkout, fetch that branch and inspect the exact object:

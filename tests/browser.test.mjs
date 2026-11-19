@@ -62,9 +62,10 @@ test('browser access is workspace-bound, one-use, time-limited, hash-only, and r
 });
 
 test('the invite inbox accepts only recipient decisions on the current request version', async t => {
-  const { store } = setup(t);
+  const fixture = setup(t);
+  let { store } = fixture;
   await assert.rejects(startRelay(store, 0, 'http://pilot.example.test'), /canonical HTTPS origin/);
-  const relay = await startRelay(store, 0, origin);
+  let relay = await startRelay(store, 0, origin);
   try {
     const alice = store.issueCredential('alice', 'agent');
     const bob = store.issueCredential('bob', 'agent');
@@ -116,6 +117,14 @@ test('the invite inbox accepts only recipient decisions on the current request v
     assert.equal(inbox.data.participant, 'bob');
     assert.equal(inbox.data.request.id, request.id);
     assert.equal(inbox.data.events[0].operation, 'request.create');
+    const port = Number(new URL(relay.url).port);
+    await relay.close();
+    store.close();
+    store = new SqliteStore(fixture.filename, workspace);
+    relay = await startRelay(store, port, origin);
+    const reconnected = await web('inbox', { cookie: bobCookie });
+    assert.equal(reconnected.status, 200);
+    assert.deepEqual(reconnected.data, inbox.data);
     assert.equal((await web('inbox', { cookie: bobCookie, requestOrigin: 'https://example.test' })).status, 403);
 
     const accept = { type: 'request.accept', requestId: request.id, expectedVersion: 1, retryKey: 'accept' };
@@ -142,7 +151,10 @@ test('the invite inbox accepts only recipient decisions on the current request v
     assert.deepEqual(final.data.events.map(event => event.operation), ['request.create', 'request.reply', 'request.accept', 'request.start', 'request.complete']);
     assert.equal((await post('sign-out', {}, bobCookie)).status, 200);
     assert.equal((await web('inbox', { cookie: bobCookie })).status, 401);
+    assert.equal(store.revokeBrowserAccess(aliceInvite.id), true);
+    assert.equal((await web('inbox', { cookie: aliceCookie })).status, 401);
   } finally {
-    await relay.close();
+    try { await relay.close(); }
+    finally { store.close(); }
   }
 });

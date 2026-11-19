@@ -22,7 +22,7 @@ export async function readCommitDiff(repository: string, commit: string): Promis
   try {
     type = await run('git', ['--no-replace-objects', 'cat-file', '-t', commit], repository, 5_000);
   } catch {
-    throw new LocalError('COMMIT_UNAVAILABLE', 'The reported commit is unavailable in your local checkout. Make it available and rerun the watcher.');
+    throw new LocalError('COMMIT_UNAVAILABLE', 'The reported commit is missing from the selected checkout. Fetch the assignee’s reported branch from your Git remote, verify the exact commit is available, then rerun the watcher.');
   }
   if (type.trim() !== 'commit') throw new LocalError('INVALID_COMMIT', 'The reported object is not a commit.');
   try {

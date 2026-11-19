@@ -1,62 +1,44 @@
 # Delivery roadmap
 
-Complete small vertical slices. The checkboxes below describe current delivery status, not promises about dates. Update [AI_MEMORY.md](../AI_MEMORY.md) after each working session.
+The next milestone is an internal rehearsal of a complete handoff using a fresh checkout and synthetic data. The [pilot task list](PILOT_TASKS.md) orders the remaining work and defines how to check it. [Project memory](../AI_MEMORY.md) records verified results.
 
-## M0: Repository foundation
+## M0. Repository foundation
 
-- [x] Explain the problem and current status in README.md.
-- [x] Define scope, architecture, decisions, and a validation plan.
-- [x] Add agent guidance, project memory, contribution guidance, and license.
-- [x] Define a repository check and GitHub Actions workflow.
-- [x] Run the local foundation checks.
-- [x] Commit the foundation.
-- [x] Publish and verify the repository on GitHub.
+- [x] Publish the open-source repository with scope, architecture, decisions, a validation plan, and contribution guidance.
+- [x] Run documentation, source, and behavioral checks in GitHub Actions.
 
-Exit: documentation checks pass, the initial commit exists, and its files can be inspected on GitHub. A local pass does not establish a passing hosted CI run.
+## M1. Request lifecycle and local relay
 
-## M1: Domain rules and two-terminal relay
+- [x] Implement the request lifecycle, participant roles, version checks, and revisioned decisions.
+- [x] Persist requests, history, and retry receipts in SQLite and test writer collisions and interrupted writes.
+- [x] Run a full request and approval with two terminal clients on one machine.
 
-- [x] Define payload types, limits, errors, IDs, timestamps, and versions.
-- [x] Implement request lifecycle and role rules in a shared domain layer (credential authentication remains a relay responsibility).
-- [x] Test human-role acceptance, recipient validation, stale versions, retries, and terminal states.
-- [x] Define decision revisions and invalidate stale acknowledgments.
-- [x] Add a single-process synthetic domain handoff demo.
-- [x] Add SQLite persistence with migrations, transactional event recording, reopen/crash recovery, and competing-writer tests.
-- [x] Add a synthetic SQLite close/reopen and retry demonstration.
-- [x] Add a loopback-only authenticated relay and two terminal clients for a synthetic request/reply/approval scenario.
+## M2. Assistants and review
 
-Exit: two terminal clients complete a persisted lifecycle; invalid and duplicate operations behave as documented. This is not yet an assistant integration.
+- [x] Verify the stdio MCP adapter with SDK clients and role-separated profiles.
+- [x] Run a local Claude Code to Codex handoff with opt-in automatic review.
+- [ ] Record the client versions, operating systems, and setup steps used for the upcoming two-machine run.
 
-## M2: Connect the actual assistants
+## M3. Internal pilot readiness
 
-- [ ] Confirm both participants' assistant clients and operating systems.
-- [x] Pin the official MCP SDK and verify stdio with matching SDK clients.
-- [ ] Validate transport with the actual assistant clients and record their versions.
-- [x] Expose scoped inbox, request, reply, decision, start, and completion actions.
-- [x] Provide a separate human-profile terminal acceptance interface.
-- [x] Verify effective agent identity at startup/per call, omit human-only tools, and test role/revocation boundaries.
-- [x] Exercise a local handoff using Claude Code and Codex with automatic review.
+- [x] Exercise the HTTPS relay with two participant identities on one laptop.
+- [x] Exercise invite sign-in, phone approval, and an automatic completion update through public HTTPS. The run used CLI profiles on the laptop and the browser on a physical phone.
+- [ ] Land the browser inbox after adding the phone evidence to [PR #8](https://github.com/GarvitSobti/agentbridge/pull/8).
+- [x] Add a synthetic fixture, a repeatable rehearsal, and setup diagnostics.
+- [x] Rehearse stale approval, a discarded write receipt, relay restart, and exact-commit fetch recovery.
+- [ ] Rehearse loss of the phone browser connection during an approval.
+- [ ] Make the next action and recovery states clear in the inbox.
 
-Exit: both assistants exchange and act on an explicitly accepted request. Record exact tested client versions and instructions. Do not claim compatibility from an MCP configuration alone.
+Exit when a fresh checkout can run the fixture from setup through approval, completion, and review, and the same run can recover without duplicate work. Keep the rehearsal to one repository, two participants, and one relay.
 
-## M3: Cross-machine operation and recovery
+## M4. Invite-only two-person pilot
 
-- [x] Define and test operator provisioning and the registered HTTPS origin for the pilot (ADR-014).
-- [ ] Deploy the pilot and verify a real handoff across two laptops.
-- [x] Verify the public HTTPS relay with separate participant profiles on one laptop.
-- [x] Add invite sign-in, the browser inbox, and version-aware approvals.
-- [ ] Add agent device pairing.
-- [ ] Verify event cursors, disconnect/reconnect, server restart, and retry behavior.
-- [ ] Document a reproducible setup for two machines without committing credentials.
+- [ ] Deploy one pilot workspace on a stable HTTPS origin with durable storage and verify restore and access revocation.
+- [ ] Have two developers on separate laptops connect their own assistants and run a dependent change and a mid-task revision.
+- [ ] Compare setup time, manual relays, inbox prompts, and rework with the team's usual workflow using the [validation plan](VALIDATION.md).
 
-Exit: a pending request survives a disconnected participant and relay restart. The real pair can reconnect without duplicate work. Do not expose the development relay before these controls are ready.
+Exit when both developers can complete the handoff from their own checkouts and we have evidence of where Agent Bridge saved or added work.
 
-## M4: Two-person pilot
+## After the pilot
 
-- [ ] Build a synthetic CRM fixture using no private source or data.
-- [ ] Run baseline and prototype scenarios from [VALIDATION.md](VALIDATION.md).
-- [ ] Record manual relays, rework, elapsed time, interruptions, and limitations.
-- [ ] Publish a reproducible example and honest findings, including failures.
-- [ ] Update the README with actual setup commands and implemented capabilities.
-
-Exit: a repeatable two-person demonstration and an evidence-based decision to continue, narrow, or change the project. Commercial discovery remains a later choice.
+Prioritize the bottleneck observed in the run. Consider device pairing if profile setup dominates, an opt-in notification if people miss handoffs, and a richer decision view if people miss revisions. Revisit public signups if the pilot supports expanding beyond the current [scope](SCOPE.md).

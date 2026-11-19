@@ -1,7 +1,27 @@
 import fs from 'node:fs';
 import { parseArgs } from 'node:util';
 import { randomUUID } from 'node:crypto';
-import { homePath, readConfig, loadProfile, listProfiles, configuredEndpoint, LocalError } from './profiles.ts';
+import { homePath, readConfig, loadProfile, listProfiles, configuredEndpoint, LocalError, type Profile } from './profiles.ts';
+
+async function diagnose(response: Response, profile: Profile, name: string, url: URL): Promise<void> {
+  if (response.status === 401) {
+    throw new LocalError('UNAUTHORIZED', 'The relay rejected this credential. Ask the operator for a current profile for this workspace.');
+  }
+  if (!response.ok) {
+    throw new LocalError('RELAY_UNHEALTHY', 'The configured URL did not return an identity. Check that the relay and HTTPS proxy are running.');
+  }
+  const data = await response.json().catch(() => null) as { principal?: Partial<Profile> } | null;
+  const actor = data?.principal;
+  if (actor?.workspaceId !== profile.workspaceId || actor.participantId !== profile.participantId || actor.role !== profile.role) {
+    throw new LocalError('PROFILE_IDENTITY_MISMATCH', 'The selected profile identity did not match the relay. Use the original profile supplied by the operator.');
+  }
+  console.log(JSON.stringify({
+    ready: true,
+    profile: name,
+    relayOrigin: url.origin,
+    principal: { workspaceId: actor.workspaceId, participantId: actor.participantId, role: actor.role },
+  }, null, 2));
+}
 
 let retryKey: string | undefined;
 try {
@@ -12,7 +32,7 @@ try {
   catch { throw new LocalError('INVALID_ARGUMENTS', 'Invalid client arguments. Use --help.'); }
   const { values, positionals } = parsed;
   if (values.help) {
-    console.log('bridge --profile NAME request --to bob --title TITLE --body TEXT [--retry KEY]\nbridge --profile NAME whoami\nbridge --profile NAME inbox\nbridge --profile NAME get --id REQUEST_ID\nbridge --profile NAME reply --id ID --version N --body TEXT\nbridge --profile NAME accept|decline|start|cancel --id ID --version N\nbridge --profile NAME events [--after N] [--limit N]\nbridge --profile NAME command --file COMMAND.json\nbridge profiles\nOptions: --home PATH, --url http://127.0.0.1:PORT');
+    console.log('bridge --profile NAME request --to bob --title TITLE --body TEXT [--retry KEY]\nbridge --profile NAME whoami\nbridge --profile NAME doctor\nbridge --profile NAME inbox\nbridge --profile NAME get --id REQUEST_ID\nbridge --profile NAME reply --id ID --version N --body TEXT\nbridge --profile NAME accept|decline|start|cancel --id ID --version N\nbridge --profile NAME events [--after N] [--limit N]\nbridge --profile NAME command --file COMMAND.json\nbridge profiles\nOptions: --home PATH, --url http://127.0.0.1:PORT');
   } else {
     if (positionals.length !== 1) throw new LocalError('INVALID_ARGUMENTS', 'Choose one client command. Use --help.');
     const action = positionals[0];
@@ -32,7 +52,7 @@ try {
       let route: string;
       let command: Record<string, unknown> | undefined;
       if (action === 'inbox') route = '/v1/inbox';
-      else if (action === 'whoami') route = '/v1/identity';
+      else if (action === 'whoami' || action === 'doctor') route = '/v1/identity';
       else if (action === 'get' && values.id) route = '/v1/requests/' + encodeURIComponent(values.id);
       else if (action === 'events') route = `/v1/events?after=${integer(values.after ?? '0', 'after', 0)}&limit=${integer(values.limit ?? '100', 'limit')}`;
       else if (action === 'request') {
@@ -63,12 +83,20 @@ try {
         response = await fetch(new URL(route, url), { method: command ? 'POST' : 'GET', redirect: 'error', signal: AbortSignal.timeout(10_000),
           headers: { authorization: 'Bearer ' + profile.token, ...(command ? { 'content-type': 'application/json' } : {}) },
           ...(command ? { body: JSON.stringify(command) } : {}) });
-      } catch { throw new LocalError('NETWORK_ERROR', 'Could not reach the relay. For an uncertain write, retry the same command with the reported retryKey.'); }
-      const data: unknown = await response.json();
-      if (!response.ok) {
-        console.error(JSON.stringify({ ...(data as object), ...(retryKey ? { retryKey } : {}) }, null, 2));
-        process.exitCode = 1;
-      } else console.log(JSON.stringify({ ...(data as object), ...(retryKey ? { retryKey } : {}) }, null, 2));
+      } catch {
+        const message = action === 'doctor'
+          ? 'Could not reach the configured relay. Check the local relay or confirm the registered HTTPS URL with the operator.'
+          : 'Could not reach the relay. For an uncertain write, retry the same command with the reported retryKey.';
+        throw new LocalError('NETWORK_ERROR', message);
+      }
+      if (action === 'doctor') await diagnose(response, profile, values.profile, url);
+      else {
+        const data: unknown = await response.json();
+        if (!response.ok) {
+          console.error(JSON.stringify({ ...(data as object), ...(retryKey ? { retryKey } : {}) }, null, 2));
+          process.exitCode = 1;
+        } else console.log(JSON.stringify({ ...(data as object), ...(retryKey ? { retryKey } : {}) }, null, 2));
+      }
     }
   }
 } catch (error) {

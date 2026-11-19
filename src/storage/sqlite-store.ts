@@ -2,6 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { createBoard, execute, readEvents, readInbox, readRequest, DomainError } from '../domain/board.ts';
 import { authorize } from '../domain/validation.ts';
+import { agreementsReady, pickupPrompt } from '../domain/pickup.ts';
 import type { BoardState, CommandResult, DomainEvent, Environment, Principal, RetryReceipt, Role, WorkRequest, Workspace } from '../domain/types.ts';
 import { nodeEnvironment } from '../runtime.ts';
 import { APPLICATION_ID, MIGRATIONS } from './migrations.ts';
@@ -245,7 +246,14 @@ export class SqliteStore {
       const selected = requestId ?? requests[0]?.id;
       const request = selected ? readRequest(state, actor, selected) : null;
       const events = request ? state.events.filter(event => event.requestId === request.id).slice(-50) : [];
-      return { workspace: state.workspace, participant: actor.participantId, requests, request, events };
+      let pickupPreview;
+      if (request && actor.role === 'human' && request.recipientId === actor.participantId
+          && (request.status === 'pending' || request.status === 'accepted') && request.pickup?.approvedVersion !== request.version) {
+        const prompt = pickupPrompt(request, state.workspace);
+        pickupPreview = prompt ? { prompt, promptHash: this.#environment.sha256(prompt), ready: agreementsReady(request, state.workspace) } : undefined;
+      }
+      return { workspace: state.workspace, participant: actor.participantId, requests, request, events,
+        ...(pickupPreview ? { pickupPreview } : {}) };
     });
   }
 

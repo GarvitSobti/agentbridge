@@ -56,6 +56,13 @@ export interface WorkRequest {
   decisions: Decision[];
   messages: Message[];
   completion?: Completion;
+  pickup?: {
+    prompt: string;
+    promptHash: string;
+    approvedVersion: number;
+    runId?: string;
+    failure?: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -65,10 +72,12 @@ interface ExistingRequest extends Retry { requestId: string; expectedVersion: nu
 export type Command =
   | (Retry & { type: 'request.create'; recipientId: string; title: string; body: string; references: CodeReference[] })
   | (ExistingRequest & { type: 'request.accept' | 'request.decline' | 'request.start' | 'request.cancel' })
+  | (ExistingRequest & { type: 'request.approve_pickup' | 'request.claim_pickup'; promptHash: string })
+  | (ExistingRequest & { type: 'request.fail_pickup'; pickupRunId: string; reason: string })
   | (ExistingRequest & { type: 'request.reply'; body: string })
   | (ExistingRequest & { type: 'decision.propose'; decisionId?: string; text: string; references: CodeReference[] })
   | (ExistingRequest & { type: 'decision.agree'; decisionId: string; revision: number; contentHash: string })
-  | (ExistingRequest & { type: 'request.complete'; branch: string; commit: string; summary: string; checks: CheckClaim[]; references: CodeReference[] });
+  | (ExistingRequest & { type: 'request.complete'; branch: string; commit: string; summary: string; checks: CheckClaim[]; references: CodeReference[]; pickupRunId?: string });
 
 export interface DomainEvent {
   cursor: number;

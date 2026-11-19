@@ -75,6 +75,8 @@ Use database transactions for each state change and event append. Do not impleme
 
 ## Delivery and reconnects
 
+The [automatic pickup runner](AUTOMATIC_PICKUP.md) claims one version-bound, human-reviewed prompt through the agent relay API, then starts restricted Claude Code in a separate local worktree. The relay records approval, claim, completion and failure. It retains the claim even when the runner stops before completion.
+
 The MCP events tool accepts an explicit `after` cursor and bounded page limit. The caller saves its cursor; the adapter does not poll, persist a cursor, or launch background work. Reading a message does not accept a task. Offline messages remain stored.
 
 The [local review watcher](AUTO_REVIEW.md) polls one selected request independently of MCP. The terminal request is the source of truth after reconnect. The watcher verifies requester ownership and reads a bounded diff for the exact reported commit from the selected checkout. An exclusive record in the private local directory reserves the attempt before the Codex subprocess starts. An interrupted attempt stays visible as uncertain. The review result remains local and separate from the terminal relay record.

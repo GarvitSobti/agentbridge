@@ -4,7 +4,7 @@ Last updated: 2026-11-20
 
 ## Current position
 
-The HTTPS relay merged in PR #7 at `64385f2a67f58bd8d8f72e43c51c8ba9c3b15fca`. PR #8 merged. Its description records the physical phone test. The internal rehearsal and setup diagnostics merged in PR #9. Approval recovery merged in PR #10. PR #6 merged the Git ownership diagnostics. Browser workspace creation, teammate invites and agent pairing are on `feat/invite-only-beta`. Two real Codex sessions completed a mid-task decision revision. Claude Code later reported a fresh synthetic CRM completion that Codex reviewed automatically in about 12 seconds on one laptop. A two-laptop handoff remains open.
+The HTTPS relay merged in PR #7 at `64385f2a67f58bd8d8f72e43c51c8ba9c3b15fca`. PR #8 merged. Its description records the physical phone test. The internal rehearsal and setup diagnostics merged in PR #9. Approval recovery merged in PR #10. PR #6 merged the Git ownership diagnostics. The browser workspace creation and pairing flow in PR #11 completed a live Garvit and Nitipa handoff per the owner. The exact prompt approval and local pickup runner are on `feat/approved-automatic-pickup`. Two real Codex sessions completed a mid-task decision revision. Claude Code later reported a fresh synthetic CRM completion that Codex reviewed automatically in about 12 seconds on one laptop. A two-laptop handoff remains open.
 
 Working name: Agent Bridge. Repository: `GarvitSobti/agentbridge`. Owner: Garvit Sobti. MIT license. Unpublished package name: `agent-bridge`.
 
@@ -37,6 +37,8 @@ Working name: Agent Bridge. Repository: `GarvitSobti/agentbridge`. Owner: Garvit
 
 - [Beta onboarding](docs/BETA_ONBOARDING.md) lets the operator issue one owner link. The owner creates a named workspace, invites one teammate, and the two members pair locally generated agent credentials from the browser.
 
+- [Automatic pickup](docs/AUTOMATIC_PICKUP.md) lets the recipient approve the exact prompt in the browser. The local runner claims one approved version, starts a file-edit session, then reports the exact branch and commit.
+
 ## Verification
 
 - Baseline 67 domain/storage/HTTP/CLI tests pass locally on Node 24.1.0, SQLite 3.49.1, after the profile-reader refactor. Four new HTTP client boundary tests also pass locally.
@@ -49,6 +51,7 @@ Working name: Agent Bridge. Repository: `GarvitSobti/agentbridge`. Owner: Garvit
 - The approval recovery change was exercised in Chrome behind local TLS at phone width. The proxy dropped decision requests before the write and dropped replies after the write. Reconnection reconciled the saved state, reused the exact retry key after reload, and required a new decision when the request version advanced. Same-tab invite renewal preserved the exact key for an interrupted decline. `npm.cmd run check` passed all 86 tests, and `npm.cmd run demo:pilot` passed. A physical-phone outage run remains open.
 - PR #6 was brought onto current main. The Git for Windows 2.47.1 test distinguished denied ownership, a missing checkout, a missing commit, and a non-commit object. The scoped trust test checked denial, an opted-in diff read, and denial again. `npm.cmd run check` passed all 86 tests, `npm.cmd run demo:pilot` passed, and the watcher help lists `--trust-repo`.
 - The beta HTTPS integration test passed owner-link rotation, one workspace creation, teammate sign-in, pairing replay and replacement, two SDK MCP adapters, browser approval, completion, and restart. The paired agents used separate client directories. Headless Chrome at phone and desktop widths exercised the owner form, teammate invite, both assistant choices, and live pairing status. The Windows suite passed all 87 tests, and the synthetic handoff rehearsal passed. The hosted two-laptop pilot remains open.
+- Automatic pickup passed the Windows repository check with 89 tests and the existing pilot rehearsal. The new integration verified exact prompt review, role and version rejection, restart, competing runner deduplication, an exact local commit, and withholding an out-of-scope edit. Chrome at 390 and 1280 pixels verified the approved text and stale-preview reset. The editor was scripted in the fixture. A signed-in Claude CLI was unavailable in the managed session.
 - Runtime: official server SDK 2.4.0 and Zod 4.6.5. Development: official client SDK 2.4.0, TypeScript 5.9.3, Node types 24.1.0. Registry resolutions and integrity are locked.
 - MCP tests use two SDK clients and scripted human-role CLI acceptance, without models. They do not verify actual assistant clients, prompt-injection resistance, human presence, or real code integration. Completion remains self-reported. Writer-kill tests do not simulate power/hardware failure.
 - Node 24.1.0 emits SQLite/type-stripping warnings. Type stripping does not replace TypeScript checking.
@@ -59,4 +62,4 @@ Public repo: https://github.com/GarvitSobti/agentbridge. Browser inbox work live
 
 ## Next task
 
-Rehearse beta onboarding on a stable trusted HTTPS deployment with two actual assistant installations. Confirm each person gets from their invite to the first completed handoff without operator profile distribution.
+Run the real approved pickup with Nitipa’s signed-in Claude Code. Send one scoped request as Garvit, approve the exact displayed prompt as Nitipa, and confirm the local runner reports the commit without a pasted recipient prompt.

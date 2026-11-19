@@ -116,6 +116,14 @@
               <button id="check-decision" class="secondary" type="button" data-action="check" hidden>Check status</button>
             </div>
           </section>
+          <details id="pickup-preview" class="pickup-review" hidden>
+            <summary>Review Claude Code prompt</summary>
+            <div class="pickup-content">
+              <p class="field-hint" id="pickup-guidance"></p>
+              <pre id="pickup-prompt" tabindex="0" aria-label="Exact prompt for Claude Code"></pre>
+              <button id="approve-pickup" class="primary" type="button" data-action="pickup">Approve and queue</button>
+            </div>
+          </details>
           <div id="request-history"></div>
         </section>
       </div>

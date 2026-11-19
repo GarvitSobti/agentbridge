@@ -34,6 +34,9 @@ const states = {
 const eventLabels = {
   'request.create': 'Requested handoff',
   'request.accept': 'Accepted request',
+  'request.approve_pickup': 'Approved Claude Code prompt',
+  'request.claim_pickup': 'Local runner claimed work',
+  'request.fail_pickup': 'Automatic pickup needs attention',
   'request.decline': 'Declined request',
   'request.start': 'Started work',
   'request.complete': 'Reported completion',
@@ -51,6 +54,7 @@ let acting = false;
 let pendingDecision = readApproval();
 let recovery = 'checking';
 let decisionNote;
+let previewRevision;
 let listSignature;
 let detailSignature;
 
@@ -106,6 +110,7 @@ function showGate(message, canRetry = false) {
   summary.replaceChildren();
   historyPanel.replaceChildren();
   approval.hidden = true;
+  renderPickup();
   decisionStatus.textContent = '';
   feedback.textContent = '';
   workspace.hidden = true;
@@ -211,6 +216,16 @@ function renderDetail(snapshot) {
     element('p', request.requesterId + ' → ' + request.recipientId + ' · Version ' + request.version, 'detail-meta'),
     element('p', request.body, 'detail-body'));
 
+  if (request.pickup && ['accepted', 'in_progress'].includes(request.status)) {
+    const pickup = section('Automatic pickup');
+    const note = request.pickup.failure || (request.pickup.runId
+      ? 'Claimed by the local runner. If it stops, inspect its worktree before starting another run.'
+      : request.pickup.approvedVersion === request.version
+        ? 'Prompt approved. Waiting for the local runner.'
+        : 'The request changed. Review the updated prompt to queue it.');
+    pickup.append(element('p', note, 'muted'));
+    historyPanel.append(pickup);
+  }
   if (request.completion) historyPanel.append(completionFor(request.completion));
   const notes = notesFor(request);
   if (notes) historyPanel.append(notes);
@@ -229,12 +244,30 @@ function renderDetail(snapshot) {
   if (focusInside) heading.focus({ preventScroll: true });
 }
 
+function renderPickup() {
+  const panel = byId('pickup-preview');
+  const request = view?.request;
+  const preview = request?.id === selectedId ? view?.pickupPreview : undefined;
+  const revision = preview && JSON.stringify([request.id, request.version, preview.promptHash]);
+  if (previewRevision !== revision) {
+    previewRevision = revision;
+    panel.open = false;
+    byId('pickup-prompt').textContent = preview?.prompt ?? '';
+    byId('pickup-guidance').textContent = preview?.ready
+      ? 'Review the exact prompt before allowing your local runner to start.'
+      : 'Both participants must acknowledge the current contract before you can queue it.';
+  }
+  panel.hidden = !preview || Boolean(pendingDecision);
+  byId('approve-pickup').disabled = !preview?.ready || acting || Boolean(load);
+}
+
 function renderApproval() {
+  renderPickup();
   const request = view?.request;
   const recovering = request && pendingDecision?.command.requestId === request.id;
   let note = '';
   if (request && decisionNote?.requestId === request.id) {
-    note = decisionNote.changed && request.status === 'pending'
+    note = decisionNote.changed && ['pending', 'accepted'].includes(request.status)
       ? 'The request changed. Review the new version before deciding.'
       : 'The request is now ' + states[request.status].toLowerCase() + '.';
   }
@@ -248,7 +281,8 @@ function renderApproval() {
     offline: 'Could not check the request. Reconnect, then tap Check status.',
     retry: 'This version is still awaiting approval. You can retry the same decision.',
   };
-  const message = recovering ? messages[recovery] : note || (canApprove ? 'Accept to let your agent pick up this request.' : '');
+  const help = view?.pickupPreview ? 'Review the prompt below to queue Claude Code, or accept for manual pickup.' : 'Accept to let your agent pick up this request.';
+  const message = recovering ? messages[recovery] : note || (canApprove ? help : '');
   if (decisionStatus.textContent !== message) decisionStatus.textContent = message;
 
   const normal = canApprove && !recovering;
@@ -258,10 +292,14 @@ function renderApproval() {
     button.hidden = !normal;
     button.disabled = acting;
   }
+  const acceptButton = byId('accept-request');
+  acceptButton.textContent = view?.pickupPreview ? 'Accept manually' : 'Accept request';
+  acceptButton.className = view?.pickupPreview ? 'secondary' : 'primary';
   const retryButton = byId('retry-decision');
   retryButton.hidden = !retryable;
   retryButton.disabled = acting || Boolean(load);
-  retryButton.textContent = pendingDecision?.command.type === 'request.decline' ? 'Retry decline' : 'Retry approval';
+  const action = pendingDecision?.command.type;
+  retryButton.textContent = action === 'request.decline' ? 'Retry decline' : action === 'request.approve_pickup' ? 'Retry pickup approval' : 'Retry approval';
   const checkButton = byId('check-decision');
   checkButton.hidden = !recovering || acting;
   checkButton.disabled = Boolean(load);
@@ -359,15 +397,23 @@ function setActing(value) {
 
 async function decide(action) {
   const request = view?.request;
-  if (acting || !request || request.id !== selectedId || request.status !== 'pending' || request.recipientId !== view.participant) return;
+  if (acting || !request || request.id !== selectedId || request.recipientId !== view.participant) return;
   if (action === 'retry') {
     if (load || recovery !== 'retry' || !pendingDecision || approvalState(pendingDecision, view) !== 'retry') return;
   } else {
     if (pendingDecision) return;
+    const preview = view.pickupPreview;
+    if (action === 'pickup') {
+      if (!byId('pickup-preview').open || !preview?.ready || load) return;
+    } else if (request.status !== 'pending') return;
     setPendingDecision({
       workspaceId: view.workspace.id,
       participant: view.participant,
-      command: { type: 'request.' + action, requestId: request.id, expectedVersion: request.version, retryKey: crypto.randomUUID() },
+      command: {
+        type: action === 'pickup' ? 'request.approve_pickup' : 'request.' + action,
+        requestId: request.id, expectedVersion: request.version, retryKey: crypto.randomUUID(),
+        ...(action === 'pickup' ? { promptHash: preview.promptHash } : {}),
+      },
     });
   }
 

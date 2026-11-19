@@ -30,6 +30,7 @@ export function createBrowserHandler(store: SqliteStore, origin: string) {
   const assets = new Map([
     ['/workspace/', ['text/html; charset=utf-8', readFileSync(new URL('./web/index.html', import.meta.url))] as const],
     ['/workspace/app.js', ['text/javascript; charset=utf-8', readFileSync(new URL('./web/app.js', import.meta.url))] as const],
+    ['/workspace/approval.js', ['text/javascript; charset=utf-8', readFileSync(new URL('./web/approval.js', import.meta.url))] as const],
     ['/workspace/app.css', ['text/css; charset=utf-8', readFileSync(new URL('./web/app.css', import.meta.url))] as const],
   ]);
 

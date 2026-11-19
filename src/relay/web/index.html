@@ -40,7 +40,20 @@
           <ul id="requests" class="request-list"></ul>
           <p id="empty-list" class="empty-list" hidden>No handoffs yet.</p>
         </nav>
-        <section id="detail" class="detail" aria-label="Request details"></section>
+        <section id="detail" class="detail" aria-label="Request details">
+          <div id="request-summary" class="detail-summary"></div>
+          <section id="approval" class="approval" aria-labelledby="approval-title" hidden>
+            <h3 id="approval-title">Your approval is needed</h3>
+            <p id="decision-status" role="status"></p>
+            <div id="approval-actions" class="action-bar">
+              <button id="accept-request" class="primary" type="button" data-action="accept">Accept request</button>
+              <button id="decline-request" class="secondary" type="button" data-action="decline">Decline</button>
+              <button id="retry-decision" class="primary" type="button" data-action="retry" hidden>Retry approval</button>
+              <button id="check-decision" class="secondary" type="button" data-action="check" hidden>Check status</button>
+            </div>
+          </section>
+          <div id="request-history"></div>
+        </section>
       </div>
     </div>
     <p class="feedback" id="feedback" role="status" aria-live="polite"></p>

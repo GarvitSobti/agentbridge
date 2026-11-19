@@ -1,3 +1,5 @@
+import { approvalState, readApproval, saveApproval } from './approval.js';
+
 const byId = id => document.getElementById(id);
 const gate = byId('gate');
 const gateMessage = byId('gate-message');
@@ -5,6 +7,10 @@ const account = byId('account');
 const workspace = byId('workspace');
 const list = byId('requests');
 const detail = byId('detail');
+const summary = byId('request-summary');
+const historyPanel = byId('request-history');
+const approval = byId('approval');
+const decisionStatus = byId('decision-status');
 const signIn = byId('sign-in');
 const retry = byId('try-again');
 const refreshButton = byId('refresh');
@@ -39,7 +45,9 @@ let view;
 let selectedId;
 let load;
 let acting = false;
-let pendingDecision;
+let pendingDecision = readApproval();
+let recovery = 'checking';
+let decisionNote;
 let listSignature;
 let detailSignature;
 
@@ -84,11 +92,15 @@ async function api(route, { data, signal } = {}) {
 function showGate(message, canRetry = false) {
   view = undefined;
   selectedId = undefined;
-  pendingDecision = undefined;
+  decisionNote = undefined;
   listSignature = undefined;
   detailSignature = undefined;
   list.replaceChildren();
-  detail.replaceChildren();
+  summary.replaceChildren();
+  historyPanel.replaceChildren();
+  approval.hidden = true;
+  decisionStatus.textContent = '';
+  feedback.textContent = '';
   workspace.hidden = true;
   account.hidden = true;
   gate.hidden = false;
@@ -174,39 +186,23 @@ function renderDetail(snapshot) {
   const signature = JSON.stringify([participant, request, events]);
   if (signature === detailSignature) return;
   detailSignature = signature;
-  const focusInside = detail.contains(document.activeElement);
-  detail.replaceChildren();
+  const focusInside = summary.contains(document.activeElement) || historyPanel.contains(document.activeElement);
+  summary.replaceChildren();
+  historyPanel.replaceChildren();
   if (!request) {
-    detail.append(element('h2', 'No requests yet', 'request-title'),
+    summary.append(element('h2', 'No requests yet', 'request-title'),
       element('p', 'New handoffs from your agents will appear here.', 'detail-meta'));
     return;
   }
   const heading = element('h2', request.title, 'request-title');
   heading.tabIndex = -1;
-  detail.append(chip(request.status), heading,
+  summary.append(chip(request.status), heading,
     element('p', request.requesterId + ' → ' + request.recipientId + ' · Version ' + request.version, 'detail-meta'),
     element('p', request.body, 'detail-body'));
 
-  if (request.status === 'pending' && request.recipientId === participant) {
-    const approval = section('Your approval is needed', 'approval');
-    approval.append(element('p', 'Accept to let your agent pick up this request.'));
-    const bar = element('div', undefined, 'action-bar');
-    for (const [action, label, style] of [
-      ['accept', 'Accept request', 'primary'],
-      ['decline', 'Decline', 'secondary'],
-    ]) {
-      const button = element('button', label, style);
-      button.type = 'button';
-      button.dataset.action = action;
-      button.disabled = acting;
-      bar.append(button);
-    }
-    approval.append(bar);
-    detail.append(approval);
-  }
-  if (request.completion) detail.append(completionFor(request.completion));
+  if (request.completion) historyPanel.append(completionFor(request.completion));
   const notes = notesFor(request);
-  if (notes) detail.append(notes);
+  if (notes) historyPanel.append(notes);
 
   const activity = section('Activity');
   const timeline = element('ol', undefined, 'timeline');
@@ -218,8 +214,65 @@ function renderDetail(snapshot) {
     timeline.append(item);
   }
   activity.append(timeline);
-  detail.append(activity);
+  historyPanel.append(activity);
   if (focusInside) heading.focus({ preventScroll: true });
+}
+
+function renderApproval() {
+  const request = view?.request;
+  const recovering = request && pendingDecision?.command.requestId === request.id;
+  let note = '';
+  if (request && decisionNote?.requestId === request.id) {
+    note = decisionNote.changed && request.status === 'pending'
+      ? 'The request changed. Review the new version before deciding.'
+      : 'The request is now ' + states[request.status].toLowerCase() + '.';
+  }
+  const canApprove = request?.id === selectedId && request?.status === 'pending' && request.recipientId === view.participant;
+  const retryable = recovering && recovery === 'retry';
+  approval.hidden = !canApprove && !recovering && !note;
+  byId('approval-title').textContent = recovering || !canApprove ? 'Approval status' : 'Your approval is needed';
+  const messages = {
+    sending: 'Saving your decision…',
+    checking: 'Checking the request to see what was saved…',
+    offline: 'Could not check the request. Reconnect, then tap Check status.',
+    retry: 'This version is still awaiting approval. You can retry the same decision.',
+  };
+  const message = recovering ? messages[recovery] : note || (canApprove ? 'Accept to let your agent pick up this request.' : '');
+  if (decisionStatus.textContent !== message) decisionStatus.textContent = message;
+
+  const normal = canApprove && !recovering;
+  byId('approval-actions').hidden = !normal && !recovering;
+  for (const id of ['accept-request', 'decline-request']) {
+    const button = byId(id);
+    button.hidden = !normal;
+    button.disabled = acting;
+  }
+  const retryButton = byId('retry-decision');
+  retryButton.hidden = !retryable;
+  retryButton.disabled = acting || Boolean(load);
+  retryButton.textContent = pendingDecision?.command.type === 'request.decline' ? 'Retry decline' : 'Retry approval';
+  const checkButton = byId('check-decision');
+  checkButton.hidden = !recovering || acting;
+  checkButton.disabled = Boolean(load);
+  for (const button of list.querySelectorAll('button[data-id]')) button.disabled = acting || Boolean(pendingDecision);
+}
+
+function setPendingDecision(attempt) {
+  pendingDecision = attempt;
+  saveApproval(attempt);
+}
+
+function reconcileApproval(snapshot) {
+  if (!pendingDecision) return;
+  const state = approvalState(pendingDecision, snapshot);
+  if (state === 'other-member') {
+    setPendingDecision(undefined);
+  } else if (state === 'retry') {
+    recovery = 'retry';
+  } else if (state === 'changed' || state === 'resolved') {
+    decisionNote = { requestId: snapshot.request.id, changed: state === 'changed' };
+    setPendingDecision(undefined);
+  }
 }
 
 async function refresh({ focus = false } = {}) {
@@ -227,10 +280,19 @@ async function refresh({ focus = false } = {}) {
   const controller = new AbortController();
   load = controller;
   refreshButton.disabled = true;
+  renderApproval();
   try {
     const query = selectedId ? '?request=' + encodeURIComponent(selectedId) : '';
-    const next = await api('inbox' + query, { signal: controller.signal });
+    const options = { signal: controller.signal };
+    let next = await api('inbox' + query, options);
     if (load !== controller) return;
+    if (pendingDecision && approvalState(pendingDecision, next) === 'other-request') {
+      const savedId = pendingDecision.command.requestId;
+      next = await api('inbox?request=' + encodeURIComponent(savedId), options);
+      if (load !== controller) return;
+      selectedId = savedId;
+    }
+    reconcileApproval(next);
     view = next;
     gate.hidden = true;
     workspace.hidden = false;
@@ -241,6 +303,7 @@ async function refresh({ focus = false } = {}) {
 
     renderList(view);
     renderDetail(view);
+    renderApproval();
     if (feedback.dataset.connection === 'interrupted') {
       feedback.textContent = '';
       delete feedback.dataset.connection;
@@ -252,7 +315,14 @@ async function refresh({ focus = false } = {}) {
   } catch (error) {
     if (load !== controller || controller.signal.aborted) return;
     if (error.code === 'SESSION_REQUIRED') {
-      showGate(invite ? 'You have an invite to this workspace.' : 'Open a current invite to sign in.');
+      const message = pendingDecision ? 'Your session ended. Open a new invite to check your decision.' : 'Open a current invite to sign in.';
+      showGate(invite ? 'You have an invite to this workspace.' : message);
+    } else if (error.code === 'NOT_FOUND' && pendingDecision) {
+      setPendingDecision(undefined);
+      selectedId = undefined;
+      await refresh();
+    } else if (view && pendingDecision) {
+      recovery = 'offline';
     } else if (view) {
       feedback.dataset.connection = 'interrupted';
       feedback.textContent = 'Could not refresh the inbox. Try again when your connection is back.';
@@ -263,6 +333,7 @@ async function refresh({ focus = false } = {}) {
     if (load === controller) {
       load = undefined;
       refreshButton.disabled = false;
+      renderApproval();
     }
   }
 }
@@ -270,35 +341,38 @@ async function refresh({ focus = false } = {}) {
 function setActing(value) {
   acting = value;
   signOut.disabled = value;
-  for (const button of detail.querySelectorAll('button[data-action]')) button.disabled = value;
+  renderApproval();
 }
 
 async function decide(action) {
   const request = view?.request;
-  if (acting || !request || request.id !== selectedId || request.status !== 'pending') return;
-  const type = 'request.' + action;
-  if (pendingDecision?.type !== type || pendingDecision?.requestId !== request.id || pendingDecision.expectedVersion !== request.version) {
-    pendingDecision = { type, requestId: request.id, expectedVersion: request.version, retryKey: crypto.randomUUID() };
+  if (acting || !request || request.id !== selectedId || request.status !== 'pending' || request.recipientId !== view.participant) return;
+  if (action === 'retry') {
+    if (load || recovery !== 'retry' || !pendingDecision || approvalState(pendingDecision, view) !== 'retry') return;
+  } else {
+    if (pendingDecision) return;
+    setPendingDecision({
+      workspaceId: view.workspace.id,
+      participant: view.participant,
+      command: { type: 'request.' + action, requestId: request.id, expectedVersion: request.version, retryKey: crypto.randomUUID() },
+    });
   }
+
+  const active = load;
+  load = undefined;
+  active?.abort();
+  decisionNote = undefined;
+  recovery = 'sending';
   setActing(true);
-  delete feedback.dataset.connection;
-  feedback.textContent = 'Saving your decision…';
   try {
-    await api('decision', { data: pendingDecision });
-    pendingDecision = undefined;
-    feedback.textContent = action === 'accept' ? 'Request accepted.' : 'Request declined.';
-    await refresh();
-  } catch (error) {
-    if (error.status === 409 || error.code === 'SESSION_REQUIRED') {
-      pendingDecision = undefined;
-      await refresh();
-      feedback.textContent = error.status === 409 ? 'The request changed. Review the updated version before deciding.' : 'Your session ended. Open a new invite.';
-    } else {
-      feedback.textContent = 'Could not confirm your decision. Refresh to check its status or retry.';
-    }
+    await api('decision', { data: pendingDecision.command });
+  } catch {
+    // The relay may have committed the decision before its response was lost.
   } finally {
+    recovery = 'checking';
     setActing(false);
   }
+  await refresh();
 }
 
 signIn.addEventListener('click', async () => {
@@ -326,6 +400,7 @@ signOut.addEventListener('click', async () => {
     const active = load;
     load = undefined;
     active?.abort();
+    setPendingDecision(undefined);
     showGate('Signed out. Open a new invite to return.');
     feedback.textContent = '';
   } catch {
@@ -337,13 +412,16 @@ signOut.addEventListener('click', async () => {
 
 list.addEventListener('click', event => {
   const button = event.target.closest('button[data-id]');
-  if (!button || acting) return;
+  if (!button || acting || pendingDecision) return;
+  decisionNote = undefined;
   selectedId = button.dataset.id;
   void refresh({ focus: true });
 });
 detail.addEventListener('click', event => {
   const button = event.target.closest('button[data-action]');
-  if (button) void decide(button.dataset.action);
+  if (!button || acting) return;
+  if (button.dataset.action === 'check') void refresh();
+  else void decide(button.dataset.action);
 });
 retry.addEventListener('click', () => { void refresh(); });
 refreshButton.addEventListener('click', () => { if (!acting) void refresh(); });
@@ -352,6 +430,7 @@ function backgroundRefresh() {
   if (view && !acting && !load && !document.hidden) void refresh();
 }
 document.addEventListener('visibilitychange', backgroundRefresh);
+window.addEventListener('online', backgroundRefresh);
 setInterval(backgroundRefresh, 5_000);
 
 if (invite) showGate('You have an invite to this workspace.');

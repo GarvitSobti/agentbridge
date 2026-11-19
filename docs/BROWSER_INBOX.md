@@ -21,6 +21,16 @@ node src/cli/relay.ts invite revoke --home $pilotHome --id $invite.id
 
 The browser requires the registered HTTPS origin. Session cookies stay in the browser and agent credentials stay in their scoped profiles. Both transports use the same version and actor rules. When the request changes while someone is reading it, the old approval is rejected and the inbox reloads the latest version.
 
+## Recover an interrupted approval
+
+If the connection drops while you accept or decline, the inbox checks the relay when it can reconnect. The **Approval status** panel also has **Check status** if you want to check immediately.
+
+- If the decision arrived, the page shows the recorded state.
+- If the same version still awaits approval, **Retry approval** or **Retry decline** sends the original decision with its original retry key.
+- If the request changed, review the new version before choosing again.
+
+An unsent or unconfirmed decision is remembered in the same tab when browser session storage is available. The inbox checks the saved participant and request before offering a retry, including after a reload or session renewal.
+
 ## Test on a phone with a temporary tunnel
 
 Use a synthetic workspace. In one PowerShell window, start a [Cloudflare Quick Tunnel](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/) and wait for `Registered tunnel connection`:

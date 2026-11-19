@@ -47,7 +47,7 @@ h1, .request-title { font-size: 1.85rem; line-height: 1.18; letter-spacing: -.03
 .chip[data-status="completed"] { background: #deefe9; color: #245b49; }
 .empty-list { font-size: .9rem; color: var(--muted); padding: .3rem .65rem .8rem; }
 .detail { min-width: 0; min-height: 23rem; padding: 1.8rem 2rem 2rem; scroll-margin-block-start: 1rem; }
-.detail > .chip { margin-bottom: .65rem; }
+.detail-summary > .chip { margin-bottom: .65rem; }
 .detail-meta { margin-top: .55rem; color: var(--muted); font-size: .9rem; overflow-wrap: anywhere; }
 .detail-body { margin-top: 1.25rem; max-width: 68ch; white-space: pre-wrap; overflow-wrap: anywhere; }
 .detail section { margin-top: 1.55rem; }

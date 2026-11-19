@@ -18,7 +18,7 @@ On Unix, use `npm` in those commands. Look for `PASS`, an exact commit ID, and t
 ### 1. Close out the browser inbox
 
 - [x] Record the phone approval and automatic completion update in [PR #8](https://github.com/GarvitSobti/agentbridge/pull/8) and mark it ready for review.
-- [ ] Owner reviews and merges the PR.
+- [x] Owner reviews and merges the PR.
 
 Done when the inbox is on main, CI is green, and the record describes the physical phone approval and the laptop CLI roles used in the test.
 
@@ -41,7 +41,8 @@ Done when both profiles can be verified from a fresh checkout without exposing t
 - [x] Verify that changing a decision or request version prevents stale agreement or approval and that an agent credential cannot approve.
 - [x] Discard a write receipt, restart the relay with a pending task, and retry using the original key. Check for one creation and one approval in the timeline.
 - [x] Verify that an existing browser session retrieves the same pending request after relay restart and that revocation takes effect on the next protected request.
-- [ ] Interrupt the phone browser connection while an approval is in flight and verify the UI shows a clear outcome or recovery path.
+- [x] In a phone-width browser, simulate a connection drop before an approval is saved and after it is saved. Verify outcome reconciliation, an exact retry after reload, and a fresh decision after a version change.
+- [ ] Repeat the connection interruption on a physical phone during the hosted pilot.
 
 Done when the rehearsal can be repeated and the evidence shows one request and one approval in the timeline, the current versions, and no loss of history across restart.
 

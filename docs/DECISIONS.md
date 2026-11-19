@@ -69,7 +69,7 @@ Use statuses Proposed, Accepted, Rejected, and Superseded. Preserve old decision
 - Date: 2026-11-16
 - Status: Proposed
 - Context: The two-person network test needs authentication, human/agent capability separation, and a reachable relay without disclosing private credentials.
-- Local progress: ADR-011 accepts and implements the loopback credential, private-profile, and revocation flow. Remote identity provisioning, TLS, distribution, and cross-machine operation remain proposed here.
+- Progress: ADR-011 covers loopback credentials and ADR-014 accepts the operator-provisioned HTTPS pilot. Browser identity, automated pairing, and live cross-machine verification remain open.
 - Proposal: Bind opaque, revocable credentials to a workspace, participant, and role; persist token hashes only. Require TLS beyond loopback, bounded payloads, and redacted logs. Provide operator-controlled membership for two participants rather than public signup.
 - Alternatives to evaluate: A device approval flow; a separate local approval channel; authenticated private networking.
 - Open questions: Initial provisioning, human credential storage, token rotation, revocation, backup handling, and hosting platform.
@@ -141,6 +141,28 @@ Use statuses Proposed, Accepted, Rejected, and Superseded. Preserve old decision
 - Alternatives: Inject into the interactive Codex session with its existing tools. Subscribe to every completion in a workspace. Implement client-specific push servers.
 - Rationale: A dedicated turn has a small input and clear permissions. Selecting one request limits activation and lets a completion from any MCP producer trigger the same flow. Polling the terminal request supports catch-up without a second event store.
 - Consequences: The recipient supplies a local checkout containing the commit. A crash after the reservation leaves an uncertain outcome for the human to inspect. Live model completion and mixed-client validation are separate from SDK tests.
+
+## ADR-014: Put the invite-only pilot behind a TLS proxy
+
+- Date: 2026-11-19
+- Status: Accepted
+- Context: A real Codex and Claude Code completed a mixed-client handoff on one laptop. Two teammates need a common relay across machines and their own Git and assistant sessions.
+- Decision: Run one existing SQLite-backed loopback relay behind a same-host TLS proxy. An operator initializes one workspace and provisions distinct human and agent profiles. Each remote profile and its workspace configuration carry the exact HTTPS origin.
+- Alternatives: Bind the development relay publicly. Introduce browser login, a device grant, and a multi-tenant database in the same change.
+- Rationale: The pilot reuses audited lifecycle and authorization rules. It lets us test the cross-machine handoff with a small deployment and preserve the existing approval boundary.
+- Consequences: The operator distributes and revokes credentials. Clients rely on standard TLS certificate validation. Browser sessions and pairing require a separate API. Git transfer stays in the participants' existing workflow.
+- Verification: The [HTTPS pilot guide](HTTPS_PILOT.md) describes the TLS integration test and live deployment steps.
+
+## ADR-015: Add an invite-only browser inbox
+
+- Date: 2026-11-19
+- Status: Accepted
+- Context: A human on a phone needs to review and approve a handoff as the addressed participant.
+- Decision: Serve the inbox from the registered relay origin. The operator issues a 15-minute one-use link whose secret is carried in the URL fragment. After an explicit click, the relay exchanges it atomically for an eight-hour Secure, HttpOnly, SameSite cookie. SQLite stores only token hashes. Browser writes require the registered Origin and invoke the existing actor and version checks.
+- Alternatives: Expose the bearer API to browser JavaScript, or require an external identity provider for this slice.
+- Rationale: The pilot already knows the two participants. A browser session gives them a direct approval route while preserving the terminal and MCP credential boundaries.
+- Consequences: The operator shares invites privately and can revoke a link or the resulting session. Git references and check claims remain self-reported. The page reads recent events and refreshes while visible. Agent pairing stays with the existing profiles.
+- Verification: Browser route tests cover origin checks, invite expiry and reuse, logout and revocation, credential separation, stale approvals, and the handoff timeline.
 
 ## New ADR template
 

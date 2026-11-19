@@ -1,6 +1,6 @@
 # Security
 
-Agent Bridge is an early proof of concept with no production-supported release. Its HTTP service binds only to 127.0.0.1 and serves terminal clients and local stdio MCP adapters. Cross-machine deployment is not implemented.
+Agent Bridge is an early proof of concept. Its HTTP service binds only to 127.0.0.1. The [HTTPS pilot](docs/HTTPS_PILOT.md) uses distinct operator-provisioned profiles for two invited participants.
 
 ## Design expectations
 
@@ -18,7 +18,7 @@ Stored task data is not encrypted. The relay operator must control database, WAL
 
 The MCP adapter verifies its actual agent role, workspace, and participant through `/v1/identity` at startup and before each tool operation. Human profile metadata is rejected, and relabeling a human token as an agent fails the relay identity check. Reads/writes remain authenticated by the relay, including revocation checks. The adapter imports profile readers without opening SQLite or importing credential administration. Its ten tools cannot accept/decline/cancel work, issue credentials, run a shell, or perform Git operations. Stdout carries SDK protocol messages only; diagnostics and error messages exclude raw credentials and internal causes.
 
-The adapter refuses remote URLs and redirects, caps command JSON at 64 KiB and responses at 1 MiB, and uses a ten-second HTTP timeout. Peer content is returned under an explicit untrusted-data envelope; this does not prevent an assistant from misinterpreting it. The official SDK protocol tests do not establish prompt-injection resistance or real assistant compatibility. See [MCP.md](docs/MCP.md).
+The adapter accepts loopback HTTP for local profiles or the registered HTTPS origin for hosted profiles. It refuses redirects and keeps its existing request, response, and timeout limits. Peer content is returned under an explicit untrusted-data envelope. The envelope relies on the assistant to treat task content as data. See [MCP.md](docs/MCP.md).
 
 ## Reporting a sensitive finding
 

@@ -117,17 +117,30 @@ test('a producer MCP completion routes the exact commit once, even across watche
   await git('add', 'health.mjs');
   await git('-c', 'user.name=Test', '-c', 'user.email=test@example.invalid', '-c', 'commit.gpgsign=false', 'commit', '--quiet', '-m', 'Set severity values');
   const commit = await git('rev-parse', 'HEAD');
-  // The simulated owner check reproduces this problem on Git for Windows.
+  await assert.rejects(readCommitDiff(path.dirname(repo), commit), { code: 'REPOSITORY_UNAVAILABLE' });
+  await assert.rejects(readCommitDiff(path.join(repo, 'missing'), commit), { code: 'REPOSITORY_UNAVAILABLE' });
+  const blob = await git('rev-parse', 'HEAD:health.mjs');
+  await assert.rejects(readCommitDiff(repo, blob), { code: 'INVALID_COMMIT' });
+
+  // Simulate a different Windows owner without changing filesystem permissions or global trust.
   if (process.platform === 'win32') {
-    const ownerOverride = process.env.GIT_TEST_ASSUME_DIFFERENT_OWNER;
+    const overrides = {
+      GIT_TEST_ASSUME_DIFFERENT_OWNER: '1',
+      GIT_CONFIG_NOSYSTEM: '1',
+      GIT_CONFIG_GLOBAL: path.join(f.home, 'empty-git-config'),
+      GIT_CONFIG_COUNT: '0',
+    };
+    const saved = Object.fromEntries(Object.keys(overrides).map(key => [key, process.env[key]]));
     try {
-      process.env.GIT_TEST_ASSUME_DIFFERENT_OWNER = '1';
+      Object.assign(process.env, overrides);
       await assert.rejects(readCommitDiff(repo, commit), { code: 'REPOSITORY_UNTRUSTED' });
       assert.match(await readCommitDiff(repo, commit, true), /\+export const severity/);
       await assert.rejects(readCommitDiff(repo, commit), { code: 'REPOSITORY_UNTRUSTED' });
     } finally {
-      if (ownerOverride === undefined) delete process.env.GIT_TEST_ASSUME_DIFFERENT_OWNER;
-      else process.env.GIT_TEST_ASSUME_DIFFERENT_OWNER = ownerOverride;
+      for (const [key, value] of Object.entries(saved)) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
     }
   }
 
@@ -157,7 +170,6 @@ test('a producer MCP completion routes the exact commit once, even across watche
     summary: 'Severity values added.', checks: [{ command: 'producer test', outcome: 'passed' }],
   })).request;
   assert.equal(reported.status, 'completed');
-  await assert.rejects(readCommitDiff(path.dirname(repo), commit), { code: 'REPOSITORY_UNAVAILABLE' });
   await assert.rejects(checkHandoff({ ...options, getDiff: sha => readCommitDiff(repo, sha.slice(0, -1) + (sha.endsWith('0') ? '1' : '0')) }), { code: 'COMMIT_UNAVAILABLE' });
   assert.ok(!fs.existsSync(options.stateDirectory));
 

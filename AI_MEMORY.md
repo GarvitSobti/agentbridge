@@ -4,7 +4,7 @@ Last updated: 2026-11-19
 
 ## Current position
 
-PRs #1 through #5 are merged. The ownership fix starts from main at `0cbc42608d903a1d3643da870560256b3c6d4403`. Two real Codex sessions on Windows completed a synthetic CRM coding handoff and a mid-task change of contract. Independent checks passed 21 combined tests and all 101 health scores after the revision. Mixed-provider and cross-machine handoffs remain open.
+The HTTPS relay merged in PR #7 at `64385f2a67f58bd8d8f72e43c51c8ba9c3b15fca`. PR #8 merged. Its description records the physical phone test. The internal rehearsal and setup diagnostics merged in PR #9. Approval recovery merged in PR #10. PR #6 updates the review watcher’s Git ownership diagnostics on current main. Two real Codex sessions completed a mid-task decision revision. Claude Code later reported a fresh synthetic CRM completion that Codex reviewed automatically in about 12 seconds on one laptop. A two-laptop handoff remains open.
 
 Working name: Agent Bridge. Repository: `GarvitSobti/agentbridge`. Owner: Garvit Sobti. MIT license. Unpublished package name: `agent-bridge`.
 
@@ -29,22 +29,31 @@ Working name: Agent Bridge. Repository: `GarvitSobti/agentbridge`. Owner: Garvit
 - Strict Zod tool schemas, stable write retry keys, expected versions, bounded HTTP requests/responses, redirect refusal, sanitized errors, and untrusted peer-content envelopes.
 - Official SDK subprocess tests plus HTTP boundary tests. [MCP guide](docs/MCP.md) documents direct-Node host configuration, human approval, error/retry semantics, and what remains unverified. ADR-012 records the dependency/transport choices.
 - [Review watcher](docs/AUTO_REVIEW.md) reads one terminal completion and passes a bounded Git diff and agreement context to a dedicated Codex CLI review. Private reservation and result records suppress duplicate launches after concurrent checks or restart. See ADR-013.
+- [HTTPS pilot](docs/HTTPS_PILOT.md) lets an operator initialize one named workspace and register the relay's HTTPS origin. A same-host Caddy example fronts the loopback relay. Terminal, MCP, and review clients use private origin-bound profiles. See ADR-014.
+
+- [Browser inbox](docs/BROWSER_INBOX.md) for one hosted workspace. A one-use operator invite opens a human browser session. The page shows recent requests and events, supports versioned accept/decline, and displays reported completion evidence.
+
+- [Internal rehearsal](docs/PILOT_TASKS.md) for a synthetic health-monitor contract. It uses two checkouts, a discarded write receipt, relay restart, versioned approval, and exact-commit fetch recovery. `bridge doctor` confirms the effective profile and origin.
 
 ## Verification
 
 - Baseline 67 domain/storage/HTTP/CLI tests pass locally on Node 24.1.0, SQLite 3.49.1, after the profile-reader refactor. Four new HTTP client boundary tests also pass locally.
 - Hosted check at commit `bbcc0cdecd677584317a15d8fe5d765f4d575cbe` passed documentation, strict TypeScript, all 74 then-current tests (including seven official SDK stdio tests), and both existing synthetic demos. [CI evidence](https://github.com/GarvitSobti/agentbridge/actions/runs/44318439552).
 - The final MCP PR passed 78 tests. The review slice passed `npm.cmd run check` on Windows with documentation, strict source checking, and 79 tests. The new test uses a real Git commit, an official SDK producer, and an injected reviewer. It covers requester scope, a missing commit, racing dispatch attempts, and local record reuse after relay restart.
-- Codex CLI 0.168.0 exposes the runner flags. The managed shell cannot resolve the interactive Codex profile home, and Claude Code is unavailable in this environment. The official SDK client stands in for the producer and the test reviewer stands in for the model.
-- The first signed-in replay stopped before review. Git could see the completion commit under the account that created the CRM worktree. The different-owner check reproduced Git's refusal and the narrow trust option allowed the exact diff read. The watcher now distinguishes repository failures from missing objects. The full 79-test check passed on Windows, including coverage that the exception applies only to the opted-in call.
+- Local Windows verification of the HTTPS pilot passed `npm.cmd run check` with 81 tests. The new suite uses runtime-generated TLS, isolated participant profile directories, both stdio MCP clients, the human CLI, origin checks, untrusted certificate rejection, relay restart, retry, and revocation. Caddy deployment and a live two-laptop test remain open.
+- Garvit ran the disposable HTTP smoke runner against commit `1485f4b` through a public Cloudflare Quick Tunnel. All 13 API calls passed from one Windows laptop with separate Alice and Bob profiles. The synthetic request reached completed at version 4. Unauthenticated inbox reads returned 401, agent approval returned 403, and human-profile approval, event catch-up, and retry replay succeeded. A real two-laptop assistant handoff and the documented Caddy deployment remain open.
+- The browser inbox and planning docs passed `npm.cmd run check` on Windows with 83 tests. Headless Chrome exercised invite sign-in, request selection, mobile-width approval, automatic display of a completion report, and sign-out against a local TLS front door. Garvit then reported successful approval on a physical phone and an automatic completion update over the HTTPS tunnel. The request and completion used the Alice and Bob laptop CLI profiles. A separate two-laptop assistant run remains open.
+- `npm.cmd run demo:pilot` passed on Windows. The legacy field failed the contract test and the revised field passed for all 101 scores. The rehearsal rejected stale approval, stale agreement and agent approval, then completed at v10 and reused the deterministic review after fetching the exact commit. The doctor and browser reconnect/revocation tests passed locally. `npm.cmd run check` passed all 84 tests.
+- The approval recovery change was exercised in Chrome behind local TLS at phone width. The proxy dropped decision requests before the write and dropped replies after the write. Reconnection reconciled the saved state, reused the exact retry key after reload, and required a new decision when the request version advanced. Same-tab invite renewal preserved the exact key for an interrupted decline. `npm.cmd run check` passed all 86 tests, and `npm.cmd run demo:pilot` passed. A physical-phone outage run remains open.
+- PR #6 was brought onto current main. The Git for Windows 2.47.1 test distinguished denied ownership, a missing checkout, a missing commit, and a non-commit object. The scoped trust test checked denial, an opted-in diff read, and denial again. `npm.cmd run check` passed all 86 tests, `npm.cmd run demo:pilot` passed, and the watcher help lists `--trust-repo`.
 - Runtime: official server SDK 2.4.0 and Zod 4.6.5. Development: official client SDK 2.4.0, TypeScript 5.9.3, Node types 24.1.0. Registry resolutions and integrity are locked.
 - MCP tests use two SDK clients and scripted human-role CLI acceptance, without models. They do not verify actual assistant clients, prompt-injection resistance, human presence, or real code integration. Completion remains self-reported. Writer-kill tests do not simulate power/hardware failure.
 - Node 24.1.0 emits SQLite/type-stripping warnings. Type stripping does not replace TypeScript checking.
 
 ## Publication and workspace
 
-Public repo: https://github.com/GarvitSobti/agentbridge. The follow-up for review Git errors lives on `fix/review-git-ownership`. The owner's lab is separate from the GitHub source and holds the synthetic fixture and local evidence.
+Public repo: https://github.com/GarvitSobti/agentbridge. Browser inbox work lives on `feat/browser-inbox`. The owner's lab is separate from the GitHub source and holds the synthetic fixture and local evidence.
 
 ## Next task
 
-Use a signed-in Codex CLI to replay the saved CRM completion with the watcher, then verify a fresh Claude Code completion causes one Codex review without another prompt. Record the client versions, review text, latency, and result on watcher restart. Cross-machine provisioning and TLS remain under ADR-007/M3.
+Make the inbox show the next actor for a pending approval, a new contract revision, and a reported completion. Verify the labels against both participants' views, then repeat the interruption exercise on a physical phone during the hosted pilot.

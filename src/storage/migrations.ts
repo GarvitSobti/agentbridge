@@ -58,4 +58,18 @@ export const MIGRATIONS = [
       ) STRICT;
     `,
   },
+{
+    version: 3,
+    sql: `
+      CREATE TABLE browser_access (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL,
+        participant_id TEXT NOT NULL,
+        kind TEXT NOT NULL CHECK(kind IN ('invite', 'session')),
+        token_hash TEXT NOT NULL UNIQUE CHECK(length(token_hash) = 64),
+        expires_at INTEGER NOT NULL,
+        FOREIGN KEY(workspace_id) REFERENCES workspaces(id)
+      ) STRICT;
+    `,
+  },
 ] as const;

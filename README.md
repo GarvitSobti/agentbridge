@@ -6,7 +6,9 @@ Request work from a teammate's agent, record the decisions you agree on, and han
 
 Try the [optional local review watcher](docs/AUTO_REVIEW.md) to turn one completed handoff into a Codex review of the reported commit.
 
-**Status: local relay and MCP prototype.** A persistent authenticated relay serves terminal clients and a stdio MCP adapter with ten agent-scoped tools. Separate human and agent profiles enforce task approval roles. Official SDK protocol tests pass; a real Codex/Claude handoff and cross-machine access remain unverified. There is no published package. The working name is Agent Bridge.
+The [HTTPS pilot guide](docs/HTTPS_PILOT.md) covers an operator-provisioned workspace. The [browser inbox guide](docs/BROWSER_INBOX.md) shows how to invite a participant and approve a handoff from a phone.
+
+**Status: two-person proof of concept.** Claude Code completed a local handoff that Codex reviewed automatically. A public HTTPS smoke test passed from one laptop with separate Alice and Bob profiles. Hosted workspaces have an invite-only browser inbox with a human approval timeline. A live two-laptop assistant handoff is pending.
 
 [Scope](docs/SCOPE.md) · [Architecture](docs/ARCHITECTURE.md) · [Decisions](docs/DECISIONS.md) · [Roadmap](docs/ROADMAP.md) · [Contributing](CONTRIBUTING.md)
 
@@ -102,9 +104,12 @@ Run the single-process demonstration:
 ```sh
 npm run demo:domain
 npm run demo:storage
+npm run demo:pilot
 ```
 
-The domain demo prints a request, clarification, decision agreement, human-role acceptance, agent-role start, and completion report. The storage demo saves and accepts a synthetic request, closes and reopens its database connection, and verifies safe retry and inbox catch-up. Participants are simulated; no real agents connect, no code is edited, and the example commit ID is a fixture. Storage demo data stays in the Git-ignored `.agent-bridge/` directory.
+The domain demo prints a request, clarification, decision agreement, human-role acceptance, agent-role start, and completion report. The storage demo saves and accepts a synthetic request, closes and reopens its database connection, and verifies safe retry and inbox catch-up. Both demos simulate participants and use a fixture commit ID. The storage demo keeps data under the Git-ignored `.agent-bridge/` directory.
+
+The pilot rehearsal creates two temporary Git checkouts and a relay, revises a contract, records a scripted human approval, and reports the exact commit after running the fixture tests. It then fetches that commit and uses a deterministic reviewer to check what the real review watcher receives. See [the pilot task list](docs/PILOT_TASKS.md) for the command and expected output.
 
 The MCP adapter uses the official `@modelcontextprotocol/server` SDK and Zod; protocol tests use the matching client SDK. TypeScript and Node type definitions provide strict source checking. SQLite, TypeScript execution, and the test runner use Node's built-ins; early Node 24 releases print experimental warnings. On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`.
 
@@ -131,7 +136,7 @@ Ownership declarations help route work; they do not sandbox a coding assistant's
 
 Two developers will try dependent work, a mid-task interface change, and an offline handoff. We will compare with their normal workflow and record manual relays, repeated explanations, rework, completion time, and unnecessary interruptions.
 
-No pilot results are available yet. See the [validation plan](docs/VALIDATION.md) for the scenarios, baseline, and evidence we will collect.
+The public HTTPS smoke test passed all 13 calls. The measured two-person pilot is pending. See the [validation plan](docs/VALIDATION.md) for the scenarios, baseline, and evidence we will collect.
 
 ## Project map
 

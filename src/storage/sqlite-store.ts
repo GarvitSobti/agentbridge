@@ -44,6 +44,14 @@ export interface IssuedCredential {
   principal: Principal;
 }
 
+const INVITE_MS = 15 * 60_000;
+export const BROWSER_SESSION_SECONDS = 8 * 60 * 60;
+
+function browserHash(token: unknown, kind: 'invite' | 'session'): string | null {
+  const pattern = kind === 'invite' ? /^abi_[A-Za-z0-9_-]{43}$/ : /^abs_[A-Za-z0-9_-]{43}$/;
+  return typeof token === 'string' && pattern.test(token) ? createHash('sha256').update(token).digest('hex') : null;
+}
+
 /** Local-file persistence adapter. Principals are trusted in-process identities, not credentials. */
 export class SqliteStore {
   readonly #db: DatabaseSync;
@@ -227,6 +235,72 @@ export class SqliteStore {
     return this.#transaction('IMMEDIATE', () => Number(this.#db.prepare('UPDATE credentials SET revoked_at = ? WHERE workspace_id = ? AND id = ? AND revoked_at IS NULL')
       .run(new Date().toISOString(), this.#workspace.id, id).changes) === 1);
   }
+  browserWorkspace(principal: Principal, requestId?: string) {
+    const actor = authorize(this.#workspace, principal);
+    return this.#transaction('DEFERRED', () => {
+      const { state } = this.#load();
+      const priority = (request: WorkRequest) => Number(request.recipientId === actor.participantId && request.status === 'pending');
+      const requests = state.requests.sort((a, b) => priority(b) - priority(a) || b.updatedAt.localeCompare(a.updatedAt))
+        .slice(0, 50).map(({ id, title, status, requesterId, recipientId, updatedAt }) => ({ id, title, status, requesterId, recipientId, updatedAt }));
+      const selected = requestId ?? requests[0]?.id;
+      const request = selected ? readRequest(state, actor, selected) : null;
+      const events = request ? state.events.filter(event => event.requestId === request.id).slice(-50) : [];
+      return { workspace: state.workspace, participant: actor.participantId, requests, request, events };
+    });
+  }
+
+  /** Trusted operator API. The invite URL is displayed only in the operator terminal. */
+  issueBrowserInvite(participantId: string): { id: string; token: string; expiresAt: number } {
+    const principal = authorize(this.#workspace, { workspaceId: this.#workspace.id, participantId, role: 'human' });
+    const id = randomUUID();
+    const token = 'abi_' + randomBytes(32).toString('base64url');
+    const now = Date.now();
+    const expiresAt = now + INVITE_MS;
+    this.#transaction('IMMEDIATE', () => {
+      this.#db.prepare('DELETE FROM browser_access WHERE workspace_id = ? AND expires_at <= ?').run(this.#workspace.id, now);
+      this.#db.prepare("INSERT INTO browser_access (id, workspace_id, participant_id, kind, token_hash, expires_at) VALUES (?, ?, ?, 'invite', ?, ?)")
+        .run(id, this.#workspace.id, principal.participantId, browserHash(token, 'invite'), expiresAt);
+    });
+    return { id, token, expiresAt };
+  }
+
+  redeemBrowserInvite(invite: unknown): string | null {
+    const hash = browserHash(invite, 'invite');
+    if (!hash) return null;
+    const token = 'abs_' + randomBytes(32).toString('base64url');
+    return this.#transaction('IMMEDIATE', () => {
+      const now = Date.now();
+      const redeemed = this.#db.prepare(
+        "UPDATE browser_access SET kind = 'session', token_hash = ?, expires_at = ? WHERE workspace_id = ? AND kind = 'invite' AND token_hash = ? AND expires_at > ?",
+      ).run(browserHash(token, 'session'), now + BROWSER_SESSION_SECONDS * 1000, this.#workspace.id, hash, now);
+      return Number(redeemed.changes) === 1 ? token : null;
+    });
+  }
+
+  authenticateBrowser(session: unknown): Principal | null {
+    const hash = browserHash(session, 'session');
+    if (!hash) return null;
+    return this.#transaction('DEFERRED', () => {
+      const row = this.#db.prepare("SELECT participant_id FROM browser_access WHERE workspace_id = ? AND kind = 'session' AND token_hash = ? AND expires_at > ?")
+        .get(this.#workspace.id, hash, Date.now());
+      if (typeof row?.participant_id !== 'string' || !this.#workspace.participants.includes(row.participant_id)) return null;
+      return { workspaceId: this.#workspace.id, participantId: row.participant_id, role: 'human' };
+    });
+  }
+
+  endBrowserSession(session: unknown): void {
+    const hash = browserHash(session, 'session');
+    if (!hash) return;
+    this.#transaction('IMMEDIATE', () => {
+      this.#db.prepare("DELETE FROM browser_access WHERE workspace_id = ? AND kind = 'session' AND token_hash = ?").run(this.#workspace.id, hash);
+    });
+  }
+
+  revokeBrowserAccess(id: string): boolean {
+    return this.#transaction('IMMEDIATE', () => Number(this.#db.prepare('DELETE FROM browser_access WHERE workspace_id = ? AND id = ?')
+      .run(this.#workspace.id, id).changes) === 1);
+  }
+
   close(): void {
     if (this.#closed) return;
     this.#db.close();

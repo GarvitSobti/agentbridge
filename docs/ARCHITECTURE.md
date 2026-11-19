@@ -1,10 +1,10 @@
 # Architecture
 
-Status: domain, SQLite persistence, loopback relay, terminal clients, stdio MCP adapter, and a local review watcher are implemented. The lab has exercised two real Codex sessions. Mixed-client and cross-machine operation remain unverified. See [the decisions](DECISIONS.md), [domain guide](DOMAIN.md), [storage guide](STORAGE.md), [local run guide](LOCAL_RELAY.md), and [MCP guide](MCP.md).
+Status: the local lab has exercised two Codex sessions and a Claude Code to Codex handoff. HTTPS transport passed isolated-process tests. A live two-laptop deployment remains open. See [the decisions](DECISIONS.md), [domain guide](DOMAIN.md), [storage guide](STORAGE.md), [local run guide](LOCAL_RELAY.md), and [MCP guide](MCP.md).
 
 ## System shape
 
-The current local demo has one loopback relay, one database, terminal clients, and local stdio MCP adapters for two participants on the same machine. The diagram below shows the target machine split: the remote deployment boundary is still future work. Terminal and MCP interfaces use HTTP to reach the same domain rules.
+The local demo has one loopback relay, one database, terminal clients, and stdio MCP adapters for two participants on one machine. The diagram below shows the pilot machine split. In hosted mode an HTTPS proxy on the relay host connects clients to the same API and domain rules.
 
 ```mermaid
 flowchart TB
@@ -37,6 +37,7 @@ flowchart TB
 | SQLite store | Persist current state, messages, agreement revisions, and lifecycle events | One relay instance; local database, not a shared network filesystem |
 | MCP adapter | Expose allowed inbox, request, reply, agreement, and completion actions | Agent credential cannot accept work or obtain human credentials |
 | Human CLI | Inspect and accept or decline incoming requests | Distinct human credential, kept out of the assistant's configuration |
+| Browser inbox | Display requests and recent history, accept or decline as the addressed person | Invite-only session on the registered HTTPS origin. Approvals use the shared domain version and role checks. |
 | Review watcher | Wait for one selected completion and prepare a local Git diff for a Codex review | Requester opts in on their machine. The relay stays outside the launch and review flow. |
 
 Implementation language: TypeScript. Runtime: Node.js 24.x. The domain has no platform imports; trusted adapters supply IDs, time, and SHA-256 hashing. The store uses Node's built-in SQLite, and the runtime helper supplies Node crypto and time defaults. Node type definitions are development tooling. Actual compatibility with the two participants' assistant clients and operating systems must still be verified.
@@ -80,9 +81,11 @@ The [local review watcher](AUTO_REVIEW.md) polls one selected request independen
 
 ## Trust and credentials
 
+In the hosted pilot, the relay remains on loopback behind a same-host TLS proxy. Each participant receives their own workspace-bound agent and human profiles. The CLI, MCP adapter and review watcher use the HTTPS origin declared in both profile and configuration. See [the HTTPS pilot](HTTPS_PILOT.md). The [browser inbox](BROWSER_INBOX.md) exchanges one-use invitations for HTTPS sessions. Agent device pairing remains a separate increment.
+
 The relay operator and database are trusted with deliberately shared messages; end-to-end encryption is outside this first design. TLS is required for access beyond loopback. Never expose an unauthenticated development server to the internet.
 
-Separate human and agent credentials are a server-side capability boundary, not protection from a fully privileged process on the relay host. The human credential must not be passed to an MCP adapter, tool arguments, prompts, or logs. ADR-011 implements local provisioning, private profile storage, and revocation. Remote provisioning and TLS remain open under ADR-007.
+Separate human and agent credentials are a server-side capability boundary, not protection from a fully privileged process on the relay host. The human credential must not be passed to an MCP adapter, tool arguments, prompts, or logs. ADR-011 implements local provisioning, private profile storage, and revocation. ADR-014 covers TLS and operator provisioning. ADR-015 covers browser invites and approval.
 
 Peer messages may contain misleading instructions. Display sender identity, role, and references; treat the content as untrusted input. The relay must never interpret message text as an executable command. Declared ownership is coordination metadata, not a filesystem sandbox.
 
@@ -101,7 +104,7 @@ examples/         Implemented: synthetic domain and storage restart demos
 src/mcp/          Implemented: agent-only tools, HTTP client, and stdio entry point
 ```
 
-Keep one package until separate publishing or deployment needs justify splitting it. Deployment and real assistant compatibility remain unverified. The official MCP v2 server SDK and Zod are runtime dependencies; the matching client SDK is test tooling (ADR-012).
+Keep one package until separate publishing or deployment needs justify splitting it. Real mixed-client compatibility was tested locally. The official MCP v2 server SDK and Zod are runtime dependencies; the matching client SDK is test tooling (ADR-012).
 
 The MCP process loads a selected agent profile using `src/cli/profiles.ts`, verifies effective identity through HTTP, and connects the SDK stdio transport. It never imports the local SQLite/operator module. Tool schemas allow only agent task operations, require stable retry keys and current versions, and wrap peer text as untrusted data. The HTTP client rechecks identity for each tool, disallows redirects/remote URLs, and limits requests and responses. Protocol validation and dispatch belong to the SDK; authorization and state changes remain in the relay/domain.
 
@@ -111,4 +114,4 @@ Requests contain revisioned decisions, messages, and completion reports as JSON.
 
 The domain/store APIs still take trusted in-process Principal objects. The HTTP adapter establishes those identities by hashing the bearer token and querying the scoped, non-revoked credential registry. It rechecks after reading a command body. Client-supplied role fields and profile metadata cannot change the server-derived role.
 
-Credential profiles are initialized outside the checkout under ~/.agentbridge/local-demo by default; human and agent files are separate, and the SQLite table stores only token hashes and metadata. The operator's filesystem remains trusted. The client refuses remote URLs and redirects; the server binds only IPv4 loopback, rejects browser Origin/other Host values, and applies explicit input/resource limits. It has no credential administration or shell-execution HTTP route.
+Credential profiles are initialized outside the checkout under ~/.agentbridge/local-demo by default. Human and agent files are separate, and the SQLite table stores token hashes and metadata. The operator's filesystem remains trusted. Clients accept loopback HTTP for local profiles and the registered HTTPS origin for hosted profiles. The terminal and MCP API rejects browser Origin headers. The browser routes reject writes unless Origin matches the registered HTTPS origin. All routes enforce the loopback upstream Host and apply input and resource limits.

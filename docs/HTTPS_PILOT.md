@@ -1,6 +1,6 @@
 # Run one workspace across two laptops
 
-The first hosted slice puts a TLS proxy in front of the existing loopback relay. One operator runs it for two invited participants and one Git repository. A connector on each laptop sends outbound HTTPS requests using its own account's agent profile. Human approval is available through the terminal client and the separate human profile.
+The first hosted slice puts a TLS proxy in front of the existing loopback relay. One operator runs it for two invited participants and one Git repository. A connector on each laptop sends outbound HTTPS requests using its own account's agent profile. Human approval is available in the [browser inbox](BROWSER_INBOX.md) or through the terminal client with the separate human profile.
 
 Use the synthetic CRM fixture for the first run. The hosted relay can read the task messages, agreed contract text, commit references and test claims that participants submit. Git carries code between laptops. Each participant uses their existing repository and assistant access. For a company repo, use a hosting and assistant setup that the company has approved for the data being shared.
 
@@ -24,7 +24,7 @@ Run the proxy in a second terminal on the relay host with the same `AGENTBRIDGE_
 caddy run --config deploy/Caddyfile --adapter caddyfile
 ```
 
-The relay keeps port 8787 on 127.0.0.1. The proxy accepts HTTPS, replaces the upstream Host header, and preserves Origin so browser requests remain subject to the relay's existing origin restriction. Keep the relay listener and the proxy's administration port on the host. Use a publicly trusted certificate on the pilot DNS name. Consult [Caddy's HTTPS setup](https://caddyserver.com/docs/automatic-https) and [reverse proxy documentation](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy).
+The relay keeps port 8787 on 127.0.0.1. The proxy accepts HTTPS, replaces the upstream Host header, and preserves Origin so browser writes and terminal traffic can be checked against their respective origin rules. Keep the relay listener and the proxy's administration port on the host. Use a publicly trusted certificate on the pilot DNS name. Consult [Caddy's HTTPS setup](https://caddyserver.com/docs/automatic-https) and [reverse proxy documentation](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy).
 
 ## Provision each laptop
 
@@ -47,6 +47,4 @@ Use the corresponding Bob profile on the other laptop. Follow the [MCP launch gu
 3. Alice fetches the branch into her local checkout and starts the [review watcher](AUTO_REVIEW.md) for the request. Bob reports the exact commit and checks through MCP. Alice's watcher picks up the completion. If it reports a missing commit, fetch that commit and rerun.
 4. Disconnect a participant and restart the relay. Reconnect and read events after a saved cursor. Retry a previously submitted command with the same retry key and arguments and confirm it returns its original result.
 
-The verification suite uses a temporary TLS proxy, separate client directories and real SDK processes. It exercises certificate validation, remote credential routing, the human approval boundary, persistence, retry and revocation. OpenSSL supplies the ephemeral test certificate. It uses the installed binary on Unix or Git for Windows' bundled binary when available. The actual deployment and two-laptop pilot still need a run.
-
-The dashboard increment will add browser sign-in, invite and device pairing, version-aware approval, and a shared request and review timeline.
+The verification suite uses a temporary TLS proxy, separate client directories and real SDK processes. It exercises certificate validation, remote credential routing, the human approval boundary, persistence, retry and revocation. OpenSSL supplies the ephemeral test certificate. It uses the installed binary on Unix or Git for Windows' bundled binary when available. A public Cloudflare Quick Tunnel smoke test passed all 13 API calls with two identities on one Windows laptop. The documented Caddy deployment and two-laptop assistant pilot still need a run. The browser inbox adds invite sign-in, version-aware approval, and a shared request timeline.

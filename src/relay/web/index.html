@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Workspace inbox · Agent Bridge</title>
+  <link rel="stylesheet" href="/workspace/app.css">
+  <script src="/workspace/app.js" type="module"></script>
+</head>
+<body>
+  <header class="masthead">
+    <div class="shell masthead-inner">
+      <span class="brand"><span class="brand-mark" aria-hidden="true"></span>Agent Bridge</span>
+      <div class="account" id="account" hidden>
+        <span id="identity"></span>
+        <button class="quiet" type="button" id="sign-out">Sign out</button>
+      </div>
+    </div>
+  </header>
+  <main class="shell page">
+    <div class="gate" id="gate">
+      <h1>Workspace inbox</h1>
+      <p id="gate-message">Checking your session…</p>
+      <button class="primary" type="button" id="sign-in" hidden>Open workspace</button>
+      <button class="secondary" type="button" id="try-again" hidden>Try again</button>
+      <noscript><p>Turn on JavaScript to open your workspace.</p></noscript>
+    </div>
+    <div id="workspace" hidden>
+      <div class="workspace-header">
+        <div>
+          <h1>Workspace inbox</h1>
+          <p class="workspace-context" id="repo-name"></p>
+        </div>
+        <button class="secondary" type="button" id="refresh">Refresh</button>
+      </div>
+      <div class="inbox-layout">
+        <nav class="inbox" aria-labelledby="requests-title">
+          <h2 id="requests-title">Requests</h2>
+          <ul id="requests" class="request-list"></ul>
+          <p id="empty-list" class="empty-list" hidden>No handoffs yet.</p>
+        </nav>
+        <section id="detail" class="detail" aria-label="Request details"></section>
+      </div>
+    </div>
+    <p class="feedback" id="feedback" role="status" aria-live="polite"></p>
+  </main>
+</body>
+</html>

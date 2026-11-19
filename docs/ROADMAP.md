@@ -43,7 +43,9 @@ Exit: both assistants exchange and act on an explicitly accepted request. Record
 
 - [x] Define and test operator provisioning and the registered HTTPS origin for the pilot (ADR-014).
 - [ ] Deploy the pilot and verify a real handoff across two laptops.
-- [ ] Add browser sign-in, invitation and device pairing, and the approval timeline.
+- [x] Verify the public HTTPS relay with separate participant profiles on one laptop.
+- [x] Add invite sign-in, the browser inbox, and version-aware approvals.
+- [ ] Add agent device pairing.
 - [ ] Verify event cursors, disconnect/reconnect, server restart, and retry behavior.
 - [ ] Document a reproducible setup for two machines without committing credentials.
 

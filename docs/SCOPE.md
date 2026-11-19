@@ -2,7 +2,7 @@
 
 Status: accepted proof-of-concept boundaries. Updated: 2026-11-19.
 
-Delivered so far: domain rules, persistence, loopback HTTP/terminal workflow, and local stdio MCP tools. Two local Codex sessions recovered after an interface revision. Claude Code and Codex completed a local handoff with automatic review. The [HTTPS pilot](HTTPS_PILOT.md) supports operator-provisioned profiles. A two-laptop run, browser pairing, and the measured two-person pilot remain open. See [MCP setup](MCP.md) and [the roadmap](ROADMAP.md).
+Delivered so far: domain rules, persistence, loopback HTTP/terminal workflow, and local stdio MCP tools. Two local Codex sessions recovered after an interface revision. Claude Code and Codex completed a local handoff with automatic review. The [HTTPS pilot](HTTPS_PILOT.md) supports operator-provisioned profiles. The public HTTPS relay passed a same-laptop smoke test. A two-laptop run, agent device pairing, and the measured two-person pilot remain open. See [MCP setup](MCP.md) and [the roadmap](ROADMAP.md).
 
 ## Problem
 
@@ -32,7 +32,7 @@ Do not depend on GitHub availability to exchange a message. Git repository ident
 | Opt-in review | The requester can start a local watcher for one outgoing request. A recorded completion can trigger one Codex review of its local commit diff. The human decides what to do with the review. |
 | Persistence | Requests, messages, decisions, and lifecycle events survive a relay restart. |
 | Offline handoff | Pending messages remain retrievable after a participant disconnects and returns. |
-| Human visibility | A terminal interface shows requests, approvals, decisions, and completion details. |
+| Human visibility | The terminal and invite-only browser inbox show requests, approvals, decisions, and completion details. The addressed human can approve or decline the displayed request version in either interface. |
 
 ## Explicit exclusions
 

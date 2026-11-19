@@ -2,7 +2,7 @@
 
 Status: accepted proof-of-concept boundaries. Updated: 2026-11-19.
 
-Delivered so far: domain rules, persistence, loopback HTTP/terminal workflow, and local stdio MCP tools. Two local Codex sessions completed a coding handoff and recovered after an interface revision. The optional [review watcher](AUTO_REVIEW.md) handles one outgoing request at a time. Mixed-client delivery, separate-machine access, ownership configuration, and the measured two-person pilot remain open. See [MCP setup](MCP.md) and [the roadmap](ROADMAP.md).
+Delivered so far: domain rules, persistence, loopback HTTP/terminal workflow, and local stdio MCP tools. Two local Codex sessions recovered after an interface revision. Claude Code and Codex completed a local handoff with automatic review. The [HTTPS pilot](HTTPS_PILOT.md) supports operator-provisioned profiles. A two-laptop run, browser pairing, and the measured two-person pilot remain open. See [MCP setup](MCP.md) and [the roadmap](ROADMAP.md).
 
 ## Problem
 

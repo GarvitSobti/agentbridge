@@ -2,7 +2,7 @@ import { realpath } from 'node:fs/promises';
 import path from 'node:path';
 import { setTimeout } from 'node:timers/promises';
 import { parseArgs } from 'node:util';
-import { homePath, loadAgentProfile, LocalError, readConfig } from './profiles.ts';
+import { homePath, loadAgentProfile, configuredEndpoint, LocalError, readConfig } from './profiles.ts';
 import { AgentRelayClient, AgentRelayError } from '../mcp/relay-client.ts';
 import { checkHandoff } from '../review/handoff.ts';
 import { readCommitDiff, runCodexReview } from '../review/codex.ts';
@@ -24,7 +24,7 @@ try {
     const config = readConfig(home);
     const identity = loadAgentProfile(home, profile);
     const repository = await realpath(repo);
-    const relay = new AgentRelayClient(`http://127.0.0.1:${config.port}`, identity);
+    const relay = new AgentRelayClient(configuredEndpoint(config, identity).href, identity);
     const deadline = performance.now() + 30 * 60_000;
     console.error('Watching one outgoing request. Codex receives its task, agreed revisions, reported check outcomes, and local commit diff.');
     let last: 'waiting' | 'offline' | undefined;

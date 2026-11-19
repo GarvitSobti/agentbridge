@@ -1,4 +1,4 @@
-import type { Profile } from '../cli/profiles.ts';
+import { relayEndpoint, LocalError, type Profile } from '../cli/profiles.ts';
 
 const allowedWrites = new Set(['request.create', 'request.reply', 'decision.propose', 'decision.agree', 'request.start', 'request.complete']);
 export class AgentRelayError extends Error {
@@ -10,12 +10,14 @@ export class AgentRelayError extends Error {
   }
 }
 export function localRelayURL(value: string): URL {
-  let url: URL;
-  try { url = new URL(value); } catch { throw new AgentRelayError('INVALID_URL', 'Use http://127.0.0.1:PORT.'); }
-  if (url.protocol !== 'http:' || url.hostname !== '127.0.0.1' || url.pathname !== '/' || url.search || url.hash || url.username || url.password) {
-    throw new AgentRelayError('INVALID_URL', 'The adapter may send credentials only to an IPv4 loopback relay.');
+  return agentRelayURL(value);
+}
+function agentRelayURL(value: string, pinned?: string): URL {
+  try { return relayEndpoint(value, pinned); }
+  catch (error) {
+    if (error instanceof LocalError) throw new AgentRelayError(error.code, error.message);
+    throw error;
   }
-  return url;
 }
 function record(value: unknown): value is Record<string, unknown> { return value !== null && typeof value === 'object' && !Array.isArray(value); }
 
@@ -24,7 +26,7 @@ export class AgentRelayClient {
   readonly #url: URL;
   readonly #profile: Profile;
   constructor(url: string, profile: Profile) {
-    this.#url = localRelayURL(url);
+    this.#url = agentRelayURL(url, profile.relayOrigin);
     if (profile.role !== 'agent') throw new AgentRelayError('AGENT_PROFILE_REQUIRED', 'Select an agent profile; human profiles are not allowed.');
     this.#profile = { ...profile };
   }
@@ -64,7 +66,7 @@ export class AgentRelayClient {
       return data;
     } catch (error) {
       if (error instanceof AgentRelayError) throw error;
-      throw new AgentRelayError('RELAY_UNAVAILABLE', 'Could not reach the local relay. For an uncertain write, retry exactly the same arguments and retry key.', retryKey);
+      throw new AgentRelayError('RELAY_UNAVAILABLE', 'Could not reach the configured relay. For an uncertain write, retry exactly the same arguments and retry key.', retryKey);
     }
   }
   async identity(): Promise<Record<string, unknown>> {

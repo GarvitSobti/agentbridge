@@ -6,16 +6,31 @@ import { homePath, readConfig, databasePath, initializeLocal, issueProfile, Loca
 try {
   let parsed;
   try { parsed = parseArgs({ allowPositionals: true, options: { home: { type: 'string' }, port: { type: 'string' },
+    origin: { type: 'string' }, workspace: { type: 'string' }, repository: { type: 'string' }, participants: { type: 'string' },
     participant: { type: 'string' }, role: { type: 'string' }, profile: { type: 'string' }, id: { type: 'string' }, help: { type: 'boolean' } } }); }
   catch { throw new LocalError('INVALID_ARGUMENTS', 'Invalid relay arguments. Use --help.'); }
   const { values, positionals } = parsed;
   const action = positionals[0];
   if (values.help) {
-    console.log('relay init [--home PATH] [--port 8787]\nrelay start [--home PATH] [--port PORT]\nrelay credential issue --participant bob --role agent --profile bob-agent-v2\nrelay credential revoke --id CREDENTIAL_ID');
+    console.log('relay init [--home PATH] [--port 8787]\nrelay init --home PATH --origin https://relay.example --workspace ID --repository REPO --participants ALICE,BOB\nrelay start [--home PATH] [--port PORT]\nrelay credential issue --participant bob --role agent --profile bob-agent-v2\nrelay credential revoke --id CREDENTIAL_ID');
   } else {
     const home = homePath(values.home);
     const numericPort = values.port === undefined ? undefined : /^\d{1,5}$/.test(values.port) ? Number(values.port) : NaN;
-    if (action === 'init' && positionals.length === 1) console.log(JSON.stringify(initializeLocal(home, numericPort), null, 2));
+    if (action !== 'init' && [values.origin, values.workspace, values.repository, values.participants].some(value => value !== undefined)) {
+      throw new LocalError('INVALID_ARGUMENTS', 'Workspace and origin options are only available during initialization.');
+    }
+    if (action === 'init' && positionals.length === 1) {
+      const { origin, workspace, repository, participants } = values;
+      if ([origin, workspace, repository, participants].some(value => value !== undefined)) {
+        const people = participants?.split(',') ?? [];
+        if (!origin || !workspace || !repository || people.length !== 2 || !people[0] || !people[1]) {
+          throw new LocalError('INVALID_ARGUMENTS', 'Hosted initialization requires --origin, --workspace, --repository and --participants ALICE,BOB.');
+        }
+        console.log(JSON.stringify(initializeLocal(home, numericPort, {
+          relayOrigin: origin, workspace: { id: workspace, repository, participants: [people[0], people[1]] },
+        }), null, 2));
+      } else console.log(JSON.stringify(initializeLocal(home, numericPort), null, 2));
+    }
     else if (action === 'start' && positionals.length === 1) {
       const config = readConfig(home);
       const store = new SqliteStore(databasePath(home), config.workspace);

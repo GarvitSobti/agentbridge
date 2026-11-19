@@ -9,7 +9,7 @@ export class LocalError extends Error {
   readonly code: string;
   constructor(code: string, message: string) { super(message); this.code = code; }
 }
-export interface LocalConfig { version: 1; workspace: Workspace; port: number }
+export interface LocalConfig { version: 1; workspace: Workspace; port: number; relayOrigin?: string }
 export interface Profile {
   version: 1;
   credentialId: string;
@@ -17,6 +17,32 @@ export interface Profile {
   participantId: string;
   role: Role;
   token: string;
+  relayOrigin?: string;
+}
+function baseURL(value: string): URL {
+  if (typeof value !== 'string') throw new LocalError('INVALID_URL', 'Provide a relay origin.');
+  try {
+    const url = new URL(value);
+    if (url.hostname && url.href === url.origin + '/') return url;
+  } catch { /* Fall through to the redacted error. */ }
+  throw new LocalError('INVALID_URL', 'Use a relay origin without credentials, a path, a query, or a fragment.');
+}
+export function httpsOrigin(value: string): string {
+  const url = baseURL(value);
+  if (url.protocol !== 'https:') throw new LocalError('INVALID_URL', 'A remote relay requires HTTPS.');
+  return url.origin;
+}
+export function relayEndpoint(value: string, pinnedOrigin?: string): URL {
+  const url = baseURL(value);
+  if (pinnedOrigin !== undefined && url.origin === httpsOrigin(pinnedOrigin)) return url;
+  if (pinnedOrigin === undefined && url.protocol === 'http:' && url.hostname === '127.0.0.1') return url;
+  throw new LocalError('INVALID_URL', 'Use the profile\'s registered HTTPS relay or, for a local profile, http://127.0.0.1:PORT.');
+}
+export function configuredEndpoint(config: LocalConfig, profile: Profile, override?: string): URL {
+  if (config.workspace.id !== profile.workspaceId || config.relayOrigin !== profile.relayOrigin) {
+    throw new LocalError('PROFILE_CONFIG_MISMATCH', 'The selected profile does not match this workspace and relay configuration.');
+  }
+  return relayEndpoint(override ?? config.relayOrigin ?? `http://127.0.0.1:${config.port}`, profile.relayOrigin);
 }
 const repositoryRoot = fs.realpathSync(fileURLToPath(new URL('../../', import.meta.url)));
 export function homePath(value = process.env.AGENTBRIDGE_HOME ?? path.join(os.homedir(), '.agentbridge', 'local-demo')): string {
@@ -50,7 +76,8 @@ export function readConfig(home: string): LocalConfig {
   let workspace: Workspace;
   try { workspace = createBoard(value.workspace).workspace; }
   catch { throw new LocalError('INVALID_CONFIG', 'The local workspace configuration is invalid.'); }
-  return { version: 1, workspace, port: value.port! };
+  const relayOrigin = value.relayOrigin === undefined ? undefined : httpsOrigin(value.relayOrigin);
+  return { version: 1, workspace, port: value.port!, ...(relayOrigin === undefined ? {} : { relayOrigin }) };
 }
 export function databasePath(home: string): string { return path.join(homePath(home), 'state.db'); }
 export function profileName(value: string): string {
@@ -67,7 +94,8 @@ export function loadProfile(home: string, name: string): Profile {
     || typeof value.token !== 'string' || !/^ab_[A-Za-z0-9_-]{43}$/.test(value.token)) {
     throw new LocalError('INVALID_PROFILE', 'The selected credential profile is invalid.');
   }
-  return value as Profile;
+  if (value.relayOrigin === undefined) return value as Profile;
+  return { ...value as Profile, relayOrigin: httpsOrigin(value.relayOrigin) };
 }
 export function loadAgentProfile(home: string, name: string): Profile {
   const profile = loadProfile(home, name);

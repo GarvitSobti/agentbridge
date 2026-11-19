@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { parseArgs } from 'node:util';
 import { randomUUID } from 'node:crypto';
-import { homePath, readConfig, loadProfile, listProfiles, LocalError } from './profiles.ts';
+import { homePath, readConfig, loadProfile, listProfiles, configuredEndpoint, LocalError } from './profiles.ts';
 
 let retryKey: string | undefined;
 try {
@@ -22,12 +22,7 @@ try {
       if (!values.profile) throw new LocalError('PROFILE_REQUIRED', 'Choose an explicit --profile; credentials are never selected automatically.');
       const config = readConfig(home);
       const profile = loadProfile(home, values.profile);
-      let url: URL;
-      try { url = new URL(values.url ?? `http://127.0.0.1:${config.port}`); }
-      catch { throw new LocalError('INVALID_URL', 'Use http://127.0.0.1:PORT.'); }
-      if (url.protocol !== 'http:' || url.hostname !== '127.0.0.1' || url.pathname !== '/' || url.search || url.hash || url.username || url.password) {
-        throw new LocalError('INVALID_URL', 'Credentials may be sent only to an explicit local IPv4 loopback relay.');
-      }
+      const url = configuredEndpoint(config, profile, values.url);
       const integer = (value: string | undefined, label: string, minimum = 1): number => {
         if (value === undefined || !/^\d{1,16}$/.test(value) || !Number.isSafeInteger(Number(value)) || Number(value) < minimum) {
           throw new LocalError('INVALID_ARGUMENTS', `Provide a valid --${label}.`);

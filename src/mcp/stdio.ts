@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util';
 import { StdioServerTransport } from '@modelcontextprotocol/server/stdio';
-import { homePath, readConfig, loadAgentProfile, LocalError } from '../cli/profiles.ts';
+import { homePath, readConfig, loadAgentProfile, configuredEndpoint, LocalError } from '../cli/profiles.ts';
 import { AgentRelayClient, AgentRelayError } from './relay-client.ts';
 import { createAgentServer } from './server.ts';
 
@@ -13,7 +13,7 @@ try {
   const home = homePath(values.home);
   const config = readConfig(home);
   const profile = loadAgentProfile(home, values.profile);
-  const relay = new AgentRelayClient(values.url ?? `http://127.0.0.1:${config.port}`, profile);
+  const relay = new AgentRelayClient(configuredEndpoint(config, profile, values.url).href, profile);
   const server = await createAgentServer(relay);
   const transport = new StdioServerTransport();
   await server.connect(transport);

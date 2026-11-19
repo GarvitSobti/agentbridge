@@ -33,16 +33,17 @@ Exit: two terminal clients complete a persisted lifecycle; invalid and duplicate
 - [x] Pin the official MCP SDK and verify stdio with matching SDK clients.
 - [ ] Validate transport with the actual assistant clients and record their versions.
 - [x] Expose scoped inbox, request, reply, decision, start, and completion actions.
-- [x] Provide a separate human-profile terminal acceptance interface (actual assistant pairing remains unverified).
+- [x] Provide a separate human-profile terminal acceptance interface.
 - [x] Verify effective agent identity at startup/per call, omit human-only tools, and test role/revocation boundaries.
-- [ ] Exercise one complete handoff using two actual assistant sessions.
+- [x] Exercise a local handoff using Claude Code and Codex with automatic review.
 
 Exit: both assistants exchange and act on an explicitly accepted request. Record exact tested client versions and instructions. Do not claim compatibility from an MCP configuration alone.
 
 ## M3: Cross-machine operation and recovery
 
-- [ ] Resolve the remote portion of ADR-007; local-only provisioning, authentication, and revocation are implemented under ADR-011.
-- [ ] Require TLS for non-loopback access and verify workspace/role isolation.
+- [x] Define and test operator provisioning and the registered HTTPS origin for the pilot (ADR-014).
+- [ ] Deploy the pilot and verify a real handoff across two laptops.
+- [ ] Add browser sign-in, invitation and device pairing, and the approval timeline.
 - [ ] Verify event cursors, disconnect/reconnect, server restart, and retry behavior.
 - [ ] Document a reproducible setup for two machines without committing credentials.
 

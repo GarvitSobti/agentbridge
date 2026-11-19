@@ -12,7 +12,7 @@ For architecture changes, also read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 - Follow the user's current instructions and the agreed scope. Resolve routine implementation choices without adding approval gates.
 - Verify the checkout and Git status before editing. Preserve unrelated user changes.
-- The domain, SQLite persistence, local relay, terminal clients, stdio MCP adapter, and opt-in review watcher are implemented. Two real Codex sessions completed the local lab. Mixed-client delivery and cross-machine access remain unverified.
+- The domain, SQLite persistence, local relay, terminal clients, stdio MCP adapter, and opt-in review watcher are implemented. Codex and Claude Code completed the mixed-client local lab. The HTTPS pilot is tested with isolated processes. A live two-machine deployment remains unverified.
 - Keep initial changes small: one relay, one repository, two participants, explicit inbox checks, and human acceptance of requested work.
 - Use a shared domain layer for state transitions so the future HTTP, MCP, and human interfaces cannot drift.
 - An agent credential must never accept requested work on behalf of a human. Design human acceptance as a distinct server-enforced capability.
@@ -23,7 +23,7 @@ For architecture changes, also read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - Record consequential decisions in docs/DECISIONS.md. Mark proposals, accepted decisions, and superseded decisions accurately.
 - Before finishing, run `npm run check` (documentation, source TypeScript, and domain/storage/HTTP/CLI/MCP tests) and checks appropriate to any changed behavior. Never report a check as passed unless it ran successfully.
 - Keep migrations append-only. Domain changes, audit events, and retry receipts must commit in the same SQLite transaction. Do not introduce remote side effects into that transaction.
-- Keep the relay on 127.0.0.1. Derive identity from the credential registry, recheck revocation after reading a write body, and never log or return token values. Human profiles stay outside assistant configuration and the checkout.
+- Keep the relay on 127.0.0.1. Hosted clients connect through TLS on a separately configured reverse proxy and use profiles tied to its origin. Derive identity from the credential registry, recheck revocation after reading a write body, and never log or return token values. Human profiles stay outside assistant configuration and the checkout.
 - Update AI_MEMORY.md with verified progress, exact checks, blockers, and one actionable next step. Keep it concise and free of private conversation dumps.
 
 ## Code review rules

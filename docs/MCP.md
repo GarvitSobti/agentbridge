@@ -1,6 +1,6 @@
 # Local MCP adapter
 
-Status: implemented stdio adapter with official SDK client/server protocol tests. Actual Codex/Claude pairing is not yet verified. This slice runs two local clients against one loopback relay; it does not connect two laptops.
+Status: the stdio adapter passed SDK tests and a local Claude Code to Codex handoff. Use the [HTTPS pilot guide](HTTPS_PILOT.md) to provision separate laptops for the next live test.
 
 ## Prepare the relay
 
@@ -28,7 +28,7 @@ codex mcp list
 
 The command format follows the [official Codex MCP guide](https://developers.openai.com/codex/mcp). This documents a configuration to try, not a completed Codex compatibility test. Open a new assistant session after configuration and inspect its MCP server/tool status. The relay must be running before the host starts this server, because startup verifies `/v1/identity`.
 
-For a custom workspace add `--home "C:\private\agentbridge"` after the profile. For a custom port add `--url http://127.0.0.1:8788`. A URL override still requires valid local configuration and a matching profile. Non-loopback addresses and redirects are rejected.
+For a custom workspace add `--home "C:\private\agentbridge"` after the profile. Local profiles may select a custom loopback port with `--url http://127.0.0.1:8788`. A hosted profile derives its registered HTTPS origin from its private files. Every mode rejects redirects.
 
 For a host that accepts a stdio JSON configuration, the equivalent launch description is:
 
@@ -79,4 +79,4 @@ The protocol suite starts its own private temporary workspace, a real relay, and
 
 Only the adapter's tool surface and server roles constrain these calls. The same-user local operator can still read files or issue credentials. Keep human profiles out of assistant configuration and preserve the [trusted-host boundary](../SECURITY.md).
 
-Next integration check: start two actual assistant sessions on one machine, record their exact client/OS versions, explicitly check Bob's inbox, accept a request in Bob's terminal, and verify completion reaches Alice. Cross-machine provisioning and TLS are a later milestone.
+Next integration check: repeat the local mixed-client workflow with one pilot workspace on two laptops. Use the registered HTTPS origin and distinct agent and human profiles.

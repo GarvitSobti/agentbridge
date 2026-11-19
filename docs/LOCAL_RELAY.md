@@ -14,7 +14,7 @@ npm.cmd run relay
 
 Initialization creates a private local workspace with `alice-agent`, `alice-human`, `bob-agent`, and `bob-human` credential profiles. It prints profile metadata, never token values. Re-running initialization keeps existing profiles and does not undo revocation.
 
-The relay prints an address such as `http://127.0.0.1:8787`. Leave it running. It binds only IPv4 loopback; your friend's other computer cannot join this version.
+The relay prints an address such as `http://127.0.0.1:8787`. Leave it running. It binds only IPv4 loopback. For another computer, use the [HTTPS pilot setup](HTTPS_PILOT.md).
 
 ## Window 2: Alice requests work
 
@@ -117,6 +117,6 @@ Revocation persists across restart and initialization. Existing profile files ar
 
 Except for health, routes require an Authorization bearer credential. JSON bodies are limited to 64 KiB, including chunked requests. Invalid or revoked credentials return 401, forbidden roles 403, malformed input 400, excessive bodies 413, unsupported content types 415, conflicts 409, and temporary storage errors 503. Internal error causes and tokens are never returned. An uncertain write should be retried with exactly the same payload, version, and key; CLI errors include the retry key where available.
 
-The service rejects browser Origin headers and unexpected Host headers and enables no CORS or WebSocket interface. It limits headers, connections, and request duration. The terminal client sends credentials only to an IPv4 loopback HTTP address and refuses redirects or remote URLs. TLS and cross-machine provisioning are deferred to the later deployment milestone.
+The service rejects browser Origin headers and unexpected Host headers. It limits headers, connections, and request duration. Local profiles send credentials to the IPv4 loopback relay. Hosted profiles use their registered HTTPS origin. All clients refuse redirects.
 
 For a busy default port, start with `npm.cmd run relay -- --port 9000`, and pass `--url http://127.0.0.1:9000` to each `bridge` command. Use `--help` on either CLI for available arguments. A failed operation returns a nonzero exit code; profile tokens are not accepted as command-line arguments.

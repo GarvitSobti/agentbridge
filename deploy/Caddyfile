@@ -1,0 +1,9 @@
+{
+	auto_https disable_redirects
+}
+
+https://{$AGENTBRIDGE_RELAY_HOST} {
+	reverse_proxy 127.0.0.1:8787 {
+		header_up Host 127.0.0.1:8787
+	}
+}

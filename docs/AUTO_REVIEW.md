@@ -31,6 +31,20 @@ claude mcp add --transport stdio agentbridge -- node $adapter --profile bob-agen
 
 Add `--home PATH` after the profile for a custom relay. Start Claude Code in Bob's worktree, verify `agentbridge_identity` reports Bob, and follow the [MCP approval and completion flow](MCP.md). Claude Code configuration is documented in [Anthropic's MCP guide](https://code.claude.com/docs/en/mcp). The installed SDK test exercises this producer role with a separate stdio client. Live Claude-to-Codex delivery remains to be verified.
 
+## Fetch a missing completion commit
+
+If the watcher reports `COMMIT_UNAVAILABLE`, confirm the assignee shared the reported branch through your usual Git remote. From the requester’s checkout, fetch that branch and inspect the exact object:
+
+```powershell
+$reportedBranch = Read-Host "Enter the reported branch name"
+$reportedCommit = Read-Host "Enter the full reported commit ID"
+if ($reportedCommit -notmatch '^(?:[a-f0-9]{40}|[a-f0-9]{64})$') { throw "Enter the full Git commit ID." }
+git fetch --no-tags origin "refs/heads/$reportedBranch"
+git cat-file -t $reportedCommit
+```
+
+When Git prints `commit`, rerun the watcher for the same request with `--once`. Its review uses the reported commit even if the fetched branch has moved. If the commit is still missing, ask the assignee to share a ref that contains it.
+
 ## What happens on restart or failure
 
 - The watcher reads the current terminal request, so a completion that arrived during downtime can be picked up on restart. Successful and failed review attempts are kept locally.

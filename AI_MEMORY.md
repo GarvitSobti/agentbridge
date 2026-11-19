@@ -4,7 +4,7 @@ Last updated: 2026-11-19
 
 ## Current position
 
-The HTTPS relay merged in PR #7 at `64385f2a67f58bd8d8f72e43c51c8ba9c3b15fca`. The browser inbox is on `feat/browser-inbox`. Two real Codex sessions completed a mid-task decision revision. Claude Code later reported a fresh synthetic CRM completion that Codex reviewed automatically in about 12 seconds on one laptop. A two-laptop handoff remains open.
+The HTTPS relay merged in PR #7 at `64385f2a67f58bd8d8f72e43c51c8ba9c3b15fca`. The browser inbox is ready for the owner’s review in PR #8. Its description records the phone test. The internal rehearsal and setup diagnostics are on `feat/pilot-rehearsal`. Two real Codex sessions completed a mid-task decision revision. Claude Code later reported a fresh synthetic CRM completion that Codex reviewed automatically in about 12 seconds on one laptop. A two-laptop handoff remains open.
 
 Working name: Agent Bridge. Repository: `GarvitSobti/agentbridge`. Owner: Garvit Sobti. MIT license. Unpublished package name: `agent-bridge`.
 
@@ -33,6 +33,8 @@ Working name: Agent Bridge. Repository: `GarvitSobti/agentbridge`. Owner: Garvit
 
 - [Browser inbox](docs/BROWSER_INBOX.md) for one hosted workspace. A one-use operator invite opens a human browser session. The page shows recent requests and events, supports versioned accept/decline, and displays reported completion evidence.
 
+- [Internal rehearsal](docs/PILOT_TASKS.md) for a synthetic health-monitor contract. It uses two checkouts, a discarded write receipt, relay restart, versioned approval, and exact-commit fetch recovery. `bridge doctor` confirms the effective profile and origin.
+
 ## Verification
 
 - Baseline 67 domain/storage/HTTP/CLI tests pass locally on Node 24.1.0, SQLite 3.49.1, after the profile-reader refactor. Four new HTTP client boundary tests also pass locally.
@@ -40,7 +42,8 @@ Working name: Agent Bridge. Repository: `GarvitSobti/agentbridge`. Owner: Garvit
 - The final MCP PR passed 78 tests. The review slice passed `npm.cmd run check` on Windows with documentation, strict source checking, and 79 tests. The new test uses a real Git commit, an official SDK producer, and an injected reviewer. It covers requester scope, a missing commit, racing dispatch attempts, and local record reuse after relay restart.
 - Local Windows verification of the HTTPS pilot passed `npm.cmd run check` with 81 tests. The new suite uses runtime-generated TLS, isolated participant profile directories, both stdio MCP clients, the human CLI, origin checks, untrusted certificate rejection, relay restart, retry, and revocation. Caddy deployment and a live two-laptop test remain open.
 - Garvit ran the disposable HTTP smoke runner against commit `1485f4b` through a public Cloudflare Quick Tunnel. All 13 API calls passed from one Windows laptop with separate Alice and Bob profiles. The synthetic request reached completed at version 4. Unauthenticated inbox reads returned 401, agent approval returned 403, and human-profile approval, event catch-up, and retry replay succeeded. A real two-laptop assistant handoff and the documented Caddy deployment remain open.
-- The browser inbox passed the Windows repository check with 83 tests. Headless Chrome exercised invite sign-in, request selection, mobile-width approval, automatic display of a completion report, and sign-out against a local TLS front door. The real phone over public HTTPS pilot is pending.
+- The browser inbox and planning docs passed `npm.cmd run check` on Windows with 83 tests. Headless Chrome exercised invite sign-in, request selection, mobile-width approval, automatic display of a completion report, and sign-out against a local TLS front door. Garvit then reported successful approval on a physical phone and an automatic completion update over the HTTPS tunnel. The request and completion used the Alice and Bob laptop CLI profiles. A separate two-laptop assistant run remains open.
+- `npm.cmd run demo:pilot` passed on Windows. The legacy field failed the contract test and the revised field passed for all 101 scores. The rehearsal rejected stale approval, stale agreement and agent approval, then completed at v10 and reused the deterministic review after fetching the exact commit. The doctor and browser reconnect/revocation tests passed locally. `npm.cmd run check` passed all 84 tests.
 - Runtime: official server SDK 2.4.0 and Zod 4.6.5. Development: official client SDK 2.4.0, TypeScript 5.9.3, Node types 24.1.0. Registry resolutions and integrity are locked.
 - MCP tests use two SDK clients and scripted human-role CLI acceptance, without models. They do not verify actual assistant clients, prompt-injection resistance, human presence, or real code integration. Completion remains self-reported. Writer-kill tests do not simulate power/hardware failure.
 - Node 24.1.0 emits SQLite/type-stripping warnings. Type stripping does not replace TypeScript checking.
@@ -51,4 +54,4 @@ Public repo: https://github.com/GarvitSobti/agentbridge. Browser inbox work live
 
 ## Next task
 
-Use the browser inbox guide to start a disposable public HTTPS workspace. Send a request from Codex, approve it from a phone off Wi-Fi, then have Claude Code report a real fixture commit and confirm the phone updates. A real two-laptop assistant pilot still needs a second participant.
+After the owner reviews the inbox and rehearsal changes, exercise stale approvals and a disconnect on a physical phone. The next UI slice in [the pilot task list](docs/PILOT_TASKS.md) should make the required person or agent action and recovery path obvious at a glance.

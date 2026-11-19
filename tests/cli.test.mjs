@@ -129,3 +129,28 @@ test('raw JSON commands are validated by the relay and profile metadata cannot c
   const actual = await f.client('bob-agent', 'whoami');
   assert.equal(actual.data.principal.role, 'agent');
 });
+
+test('doctor verifies the configured identity and gives recovery directions', { timeout: 20_000 }, async t => {
+  const f = await fixture(t);
+  await f.start();
+  const ok = await f.client('alice-agent', 'doctor');
+  assert.equal(ok.code, 0, ok.stderr);
+  assert.deepEqual(ok.data, { ready: true, profile: 'alice-agent', relayOrigin: ok.data.relayOrigin,
+    principal: { workspaceId: 'local-demo', participantId: 'alice', role: 'agent' } });
+  assert.match(ok.data.relayOrigin, /^http:\/\/127\.0\.0\.1:\d+$/);
+  const profile = loadProfile(f.home, 'alice-agent');
+  assert.ok(!ok.stdout.includes(profile.token));
+  assert.match((await f.client('unknown-agent', 'doctor')).stderr, /INVALID_PROFILE/);
+
+  const file = path.join(f.home, 'agents', 'alice-agent.json');
+  fs.writeFileSync(file, JSON.stringify({ ...profile, participantId: 'bob' }));
+  assert.match((await f.client('alice-agent', 'doctor')).stderr, /PROFILE_IDENTITY_MISMATCH/);
+  fs.writeFileSync(file, JSON.stringify(profile));
+  assert.equal((await f.run('src/cli/relay.ts', ['credential', 'revoke', '--id', profile.credentialId])).data.revoked, true);
+  const revoked = await f.client('alice-agent', 'doctor');
+  assert.match(revoked.stderr, /UNAUTHORIZED.*current profile/);
+  assert.ok(!revoked.stderr.includes(profile.token));
+
+  await f.stop();
+  assert.match((await f.client('alice-agent', 'doctor')).stderr, /NETWORK_ERROR.*configured relay/);
+});

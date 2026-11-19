@@ -28,3 +28,5 @@ jobs:
         run: npm run demo:domain
       - name: Exercise the SQLite restart demonstration
         run: npm run demo:storage
+      - name: Rehearse a two-person handoff and exact-commit review
+        run: npm run demo:pilot

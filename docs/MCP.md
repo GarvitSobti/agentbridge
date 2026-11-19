@@ -41,6 +41,29 @@ For a host that accepts a stdio JSON configuration, the equivalent launch descri
 
 Use Alice's profile for one local session and Bob's for the other. This block is a launch description, not a universal client configuration file. The friend's exact Claude client and OS are still unknown; verify that client's local stdio setup before claiming support. Each host starts its own adapter process. Both profiles currently address the same relay on the same machine.
 
+## Verify a pilot profile before connecting
+
+Receive your copy of `server.json` and your agent profile from the operator through a private channel. Keep the agent file under `agents/` in the private directory. Run from the Agent Bridge checkout in PowerShell:
+
+```powershell
+$pilotHome = Read-Host "Enter your private pilot directory"
+$profile = Read-Host "Enter your assigned agent profile name"
+npm.cmd run bridge -- --home $pilotHome --profile $profile doctor
+```
+
+Check that the origin and effective participant match your invitation and the role is `agent`. If the relay is unreachable, confirm the URL with the operator. If the relay rejects the profile or the browser invite expires, ask for a replacement through the same private channel. [Browser invitation guide](BROWSER_INBOX.md)
+
+Set the adapter path from the Agent Bridge checkout, then register the connector from your project directory. Use the command for the assistant on your machine:
+
+```powershell
+$adapter = (Resolve-Path .\src\mcp\stdio.ts).Path
+# Change to your project checkout before issuing one of the following.
+codex mcp add agentbridge-pilot -- node $adapter --home $pilotHome --profile $profile
+claude mcp add --transport stdio --scope local agentbridge-pilot -- node $adapter --home $pilotHome --profile $profile
+```
+
+Open a new assistant session and check `agentbridge_identity`. It should report the same participant. [Codex MCP guide](https://developers.openai.com/codex/mcp) and [Claude Code MCP guide](https://code.claude.com/docs/en/mcp).
+
 ## Tools and approvals
 
 | Tool | Purpose |

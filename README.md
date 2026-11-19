@@ -104,9 +104,12 @@ Run the single-process demonstration:
 ```sh
 npm run demo:domain
 npm run demo:storage
+npm run demo:pilot
 ```
 
-The domain demo prints a request, clarification, decision agreement, human-role acceptance, agent-role start, and completion report. The storage demo saves and accepts a synthetic request, closes and reopens its database connection, and verifies safe retry and inbox catch-up. Participants are simulated; no real agents connect, no code is edited, and the example commit ID is a fixture. Storage demo data stays in the Git-ignored `.agent-bridge/` directory.
+The domain demo prints a request, clarification, decision agreement, human-role acceptance, agent-role start, and completion report. The storage demo saves and accepts a synthetic request, closes and reopens its database connection, and verifies safe retry and inbox catch-up. Both demos simulate participants and use a fixture commit ID. The storage demo keeps data under the Git-ignored `.agent-bridge/` directory.
+
+The pilot rehearsal creates two temporary Git checkouts and a relay, revises a contract, records a scripted human approval, and reports the exact commit after running the fixture tests. It then fetches that commit and uses a deterministic reviewer to check what the real review watcher receives. See [the pilot task list](docs/PILOT_TASKS.md) for the command and expected output.
 
 The MCP adapter uses the official `@modelcontextprotocol/server` SDK and Zod; protocol tests use the matching client SDK. TypeScript and Node type definitions provide strict source checking. SQLite, TypeScript execution, and the test runner use Node's built-ins; early Node 24 releases print experimental warnings. On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`.
 

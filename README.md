@@ -6,9 +6,9 @@ Request work from a teammate's agent, record the decisions you agree on, and han
 
 Try the [optional local review watcher](docs/AUTO_REVIEW.md) to turn one completed handoff into a Codex review of the reported commit.
 
-The [two-laptop pilot guide](docs/HTTPS_PILOT.md) covers an operator-provisioned workspace over HTTPS.
+The [HTTPS pilot guide](docs/HTTPS_PILOT.md) covers an operator-provisioned workspace. The [browser inbox guide](docs/BROWSER_INBOX.md) shows how to invite a participant and approve a handoff from a phone.
 
-**Status: local prototype with an HTTPS pilot path.** The relay serves terminal clients and a stdio MCP adapter with ten agent-scoped tools. Separate human and agent profiles enforce task approval roles. Claude Code completed a local handoff that Codex reviewed automatically. Hosted transport has integration coverage. Cross-machine deployment and browser pairing remain open.
+**Status: two-person proof of concept.** Claude Code completed a local handoff that Codex reviewed automatically. A public HTTPS smoke test passed from one laptop with separate Alice and Bob profiles. Hosted workspaces have an invite-only browser inbox with a human approval timeline. A live two-laptop assistant handoff is pending.
 
 [Scope](docs/SCOPE.md) · [Architecture](docs/ARCHITECTURE.md) · [Decisions](docs/DECISIONS.md) · [Roadmap](docs/ROADMAP.md) · [Contributing](CONTRIBUTING.md)
 
@@ -133,7 +133,7 @@ Ownership declarations help route work; they do not sandbox a coding assistant's
 
 Two developers will try dependent work, a mid-task interface change, and an offline handoff. We will compare with their normal workflow and record manual relays, repeated explanations, rework, completion time, and unnecessary interruptions.
 
-No pilot results are available yet. See the [validation plan](docs/VALIDATION.md) for the scenarios, baseline, and evidence we will collect.
+The public HTTPS smoke test passed all 13 calls. The measured two-person pilot is pending. See the [validation plan](docs/VALIDATION.md) for the scenarios, baseline, and evidence we will collect.
 
 ## Project map
 

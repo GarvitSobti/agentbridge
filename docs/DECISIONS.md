@@ -153,6 +153,17 @@ Use statuses Proposed, Accepted, Rejected, and Superseded. Preserve old decision
 - Consequences: The operator distributes and revokes credentials. Clients rely on standard TLS certificate validation. Browser sessions and pairing require a separate API. Git transfer stays in the participants' existing workflow.
 - Verification: The [HTTPS pilot guide](HTTPS_PILOT.md) describes the TLS integration test and live deployment steps.
 
+## ADR-015: Add an invite-only browser inbox
+
+- Date: 2026-11-19
+- Status: Accepted
+- Context: A human on a phone needs to review and approve a handoff as the addressed participant.
+- Decision: Serve the inbox from the registered relay origin. The operator issues a 15-minute one-use link whose secret is carried in the URL fragment. After an explicit click, the relay exchanges it atomically for an eight-hour Secure, HttpOnly, SameSite cookie. SQLite stores only token hashes. Browser writes require the registered Origin and invoke the existing actor and version checks.
+- Alternatives: Expose the bearer API to browser JavaScript, or require an external identity provider for this slice.
+- Rationale: The pilot already knows the two participants. A browser session gives them a direct approval route while preserving the terminal and MCP credential boundaries.
+- Consequences: The operator shares invites privately and can revoke a link or the resulting session. Git references and check claims remain self-reported. The page reads recent events and refreshes while visible. Agent pairing stays with the existing profiles.
+- Verification: Browser route tests cover origin checks, invite expiry and reuse, logout and revocation, credential separation, stale approvals, and the handoff timeline.
+
 ## New ADR template
 
 ```text

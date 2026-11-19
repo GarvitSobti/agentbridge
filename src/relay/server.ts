@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import type { IncomingMessage } from 'node:http';
 import type { SqliteStore } from '../storage/sqlite-store.ts';
 import { createBrowserHandler } from './browser.ts';
+import type { BetaHost } from './beta.ts';
 import { HttpError, body, errorResponse, numberParameter, reply } from './http.ts';
 
 export { MAX_BODY_BYTES } from './http.ts';
@@ -13,9 +14,12 @@ function bearer(request: IncomingMessage): string {
 }
 export interface RelayHandle { url: string; close(): Promise<void> }
 /** The host is intentionally fixed: this proof of concept cannot bind a public interface. */
-export async function startRelay(store: SqliteStore, port = 8787, browserOrigin?: string): Promise<RelayHandle> {
+export async function startRelay(initialStore: SqliteStore | undefined, port = 8787, browserOrigin?: string, beta?: BetaHost): Promise<RelayHandle> {
   if (!Number.isSafeInteger(port) || port < 0 || port > 65535) throw new RangeError('Invalid local relay port.');
-  const browser = browserOrigin ? createBrowserHandler(store, browserOrigin) : undefined;
+  if (!initialStore && !beta) throw new TypeError('A workspace or beta host is required.');
+  if (beta && beta.origin !== browserOrigin) throw new TypeError('Use the beta host’s registered HTTPS origin.');
+  const currentStore = () => beta ? beta.store : initialStore;
+  const browser = browserOrigin ? createBrowserHandler(currentStore, browserOrigin, beta) : undefined;
   let address = '';
   const server = createServer({ maxHeaderSize: 8_192 }, (request, response) => {
     void (async () => {
@@ -29,6 +33,15 @@ export async function startRelay(store: SqliteStore, port = 8787, browserOrigin?
         throw new HttpError(403, 'LOCAL_CLIENT_REQUIRED', 'Browser origins are not supported on this API.');
       }
       if (url.pathname === '/health' && request.method === 'GET' && !url.search) { reply(response, 200, { status: 'ok' }); return; }
+      const store = currentStore();
+      if (beta && url.pathname === '/v1/pair' && request.method === 'POST' && !url.search) {
+        const data = await body(request) as { code?: unknown; tokenHash?: unknown } | null;
+        const issued = store?.redeemPairCode(data?.code, data?.tokenHash);
+        if (!issued || !store) throw new HttpError(401, 'PAIR_CODE_INVALID', 'Generate a current pairing code in the workspace inbox.');
+        reply(response, 200, { ...issued, workspace: store.workspace, relayOrigin: beta.origin });
+        return;
+      }
+      if (!store) throw new HttpError(401, 'UNAUTHORIZED', 'The workspace is awaiting setup.');
       const token = bearer(request);
       const authenticate = () => {
         const principal = store.authenticate(token);

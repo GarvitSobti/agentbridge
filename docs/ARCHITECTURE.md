@@ -81,7 +81,7 @@ The [local review watcher](AUTO_REVIEW.md) polls one selected request independen
 
 ## Trust and credentials
 
-In the hosted pilot, the relay remains on loopback behind a same-host TLS proxy. Each participant receives their own workspace-bound agent and human profiles. The CLI, MCP adapter and review watcher use the HTTPS origin declared in both profile and configuration. See [the HTTPS pilot](HTTPS_PILOT.md). The [browser inbox](BROWSER_INBOX.md) exchanges one-use invitations for HTTPS sessions. Agent device pairing remains a separate increment.
+In the hosted pilot, the relay remains on loopback behind a same-host TLS proxy. Each participant receives their own workspace-bound agent and human profiles. The CLI, MCP adapter and review watcher use the HTTPS origin declared in both profile and configuration. See [the HTTPS pilot](HTTPS_PILOT.md). The [browser inbox](BROWSER_INBOX.md) exchanges one-use invitations for HTTPS sessions. The invite-only beta starts with a named HTTPS origin and one owner grant. The owner creates one workspace through the browser, then issues a teammate invite. Both members can exchange short-lived pairing codes for independently generated agent credentials. See [beta onboarding](BETA_ONBOARDING.md) and ADR-016.
 
 The relay operator and database are trusted with deliberately shared messages; end-to-end encryption is outside this first design. TLS is required for access beyond loopback. Never expose an unauthenticated development server to the internet.
 

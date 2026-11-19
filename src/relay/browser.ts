@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { BROWSER_SESSION_SECONDS, type SqliteStore } from '../storage/sqlite-store.ts';
 import { HttpError, body, reply } from './http.ts';
+import type { BetaHost } from './beta.ts';
 
 const COOKIE = '__Host-agentbridge';
 const POLICY = "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
@@ -22,7 +23,7 @@ function object(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
-export function createBrowserHandler(store: SqliteStore, origin: string) {
+export function createBrowserHandler(currentStore: () => SqliteStore | undefined, origin: string, beta?: BetaHost) {
   const publicUrl = new URL(origin);
   if (publicUrl.protocol !== 'https:' || publicUrl.origin !== origin) {
     throw new Error('The browser inbox requires a canonical HTTPS origin.');
@@ -31,6 +32,7 @@ export function createBrowserHandler(store: SqliteStore, origin: string) {
     ['/workspace/', ['text/html; charset=utf-8', readFileSync(new URL('./web/index.html', import.meta.url))] as const],
     ['/workspace/app.js', ['text/javascript; charset=utf-8', readFileSync(new URL('./web/app.js', import.meta.url))] as const],
     ['/workspace/approval.js', ['text/javascript; charset=utf-8', readFileSync(new URL('./web/approval.js', import.meta.url))] as const],
+    ['/workspace/onboarding.js', ['text/javascript; charset=utf-8', readFileSync(new URL('./web/onboarding.js', import.meta.url))] as const],
     ['/workspace/app.css', ['text/css; charset=utf-8', readFileSync(new URL('./web/app.css', import.meta.url))] as const],
   ]);
 
@@ -50,6 +52,14 @@ export function createBrowserHandler(store: SqliteStore, origin: string) {
       return;
     }
 
+    if (beta && url.pathname === '/workspace/api/create' && request.method === 'POST' && !url.search) {
+      const token = beta.create(object(await body(request)));
+      reply(response, 201, { created: true }, { 'set-cookie': sessionCookie(token, BROWSER_SESSION_SECONDS) });
+      return;
+    }
+
+    const store = currentStore();
+    if (!store) throw new HttpError(401, 'SESSION_REQUIRED', 'Open a current workspace invite to sign in.');
     const session = getSession(request);
     const requireSession = () => {
       const actor = store.authenticateBrowser(session);
@@ -61,7 +71,9 @@ export function createBrowserHandler(store: SqliteStore, origin: string) {
       if ([...url.searchParams].length > (requestId === null ? 0 : 1) || (requestId !== null && !/^[A-Za-z0-9_-]{1,96}$/.test(requestId))) {
         throw new HttpError(400, 'INVALID_INPUT', 'Select a valid request.');
       }
-      reply(response, 200, store.browserWorkspace(requireSession(), requestId ?? undefined));
+      const actor = requireSession();
+      const inbox = store.browserWorkspace(actor, requestId ?? undefined);
+      reply(response, 200, beta ? { ...inbox, setup: store.betaSetup(actor) } : inbox);
       return;
     }
     if (request.method === 'POST' && !url.search) {
@@ -75,6 +87,24 @@ export function createBrowserHandler(store: SqliteStore, origin: string) {
       if (url.pathname === '/workspace/api/sign-out') {
         store.endBrowserSession(session);
         reply(response, 200, { signedOut: true }, { 'set-cookie': sessionCookie('', 0) });
+        return;
+      }
+      if (beta && url.pathname === '/workspace/api/invite') {
+        requireSession();
+        await body(request);
+        const setup = store.betaSetup(requireSession());
+        if (!setup.canInvite) throw new HttpError(403, 'FORBIDDEN', 'Only the workspace owner can invite the teammate.');
+        const invite = store.issueBrowserInvite(setup.teammate, true);
+        const link = new URL('/workspace/', origin);
+        link.hash = 'invite=' + invite.token;
+        reply(response, 201, { url: link.href, expiresAt: new Date(invite.expiresAt).toISOString() });
+        return;
+      }
+      if (beta && url.pathname === '/workspace/api/pair-code') {
+        requireSession();
+        await body(request);
+        const pair = store.issuePairCode(requireSession());
+        reply(response, 201, { code: pair.code, expiresAt: new Date(pair.expiresAt).toISOString() });
         return;
       }
       if (url.pathname === '/workspace/api/decision') {

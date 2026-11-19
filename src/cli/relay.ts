@@ -1,6 +1,7 @@
 import { parseArgs } from 'node:util';
 import { SqliteStore } from '../storage/sqlite-store.ts';
 import { startRelay } from '../relay/server.ts';
+import { BetaHost, initializeBeta } from '../relay/beta.ts';
 import { homePath, readConfig, databasePath, initializeLocal, issueProfile, LocalError } from './local.ts';
 
 try {
@@ -12,14 +13,29 @@ try {
   const { values, positionals } = parsed;
   const action = positionals[0];
   if (values.help) {
-    console.log('relay init [--home PATH] [--port 8787]\nrelay init --home PATH --origin https://relay.example --workspace ID --repository REPO --participants ALICE,BOB\nrelay start [--home PATH] [--port PORT]\nrelay credential issue --participant bob --role agent --profile bob-agent-v2\nrelay credential revoke --id CREDENTIAL_ID\nrelay invite issue --participant bob [--home PATH]\nrelay invite revoke --id INVITE_ID [--home PATH]');
+    console.log('relay init [--home PATH] [--port 8787]\nrelay init --home PATH --origin https://relay.example --workspace ID --repository REPO --participants ALICE,BOB\nrelay start [--home PATH] [--port PORT]\nrelay credential issue --participant bob --role agent --profile bob-agent-v2\nrelay credential revoke --id CREDENTIAL_ID\nrelay invite issue --participant bob [--home PATH]\nrelay invite revoke --id INVITE_ID [--home PATH]\nrelay beta-init --home PATH --origin https://relay.example [--port PORT]\nrelay beta-start --home PATH');
   } else {
     const home = homePath(values.home);
     const numericPort = values.port === undefined ? undefined : /^\d{1,5}$/.test(values.port) ? Number(values.port) : NaN;
-    if (action !== 'init' && [values.origin, values.workspace, values.repository, values.participants].some(value => value !== undefined)) {
+    if (action !== 'init' && action !== 'beta-init' && [values.origin, values.workspace, values.repository, values.participants].some(value => value !== undefined)) {
       throw new LocalError('INVALID_ARGUMENTS', 'Workspace and origin options are only available during initialization.');
     }
-    if (action === 'init' && positionals.length === 1) {
+    if (action === 'beta-init' && positionals.length === 1) {
+      if (!values.home || !values.origin || values.workspace || values.repository || values.participants) {
+        throw new LocalError('INVALID_ARGUMENTS', 'Use beta-init with an explicit private --home and HTTPS --origin.');
+      }
+      console.log(JSON.stringify(initializeBeta(home, values.origin, numericPort)));
+    } else if (action === 'beta-start' && positionals.length === 1) {
+      if (!values.home || values.port !== undefined) throw new LocalError('INVALID_ARGUMENTS', 'Use beta-start with the registered private --home.');
+      const beta = new BetaHost(home);
+      let relay;
+      try { relay = await startRelay(undefined, beta.port, beta.origin, beta); }
+      catch { beta.close(); throw new LocalError('START_FAILED', 'Could not start the beta relay. Check its port and private directory.'); }
+      console.log(JSON.stringify({ listening: relay.url, workspaceCreated: Boolean(beta.store) }));
+      const shutdown = () => { void relay.close().finally(() => beta.close()); };
+      process.once('SIGINT', shutdown);
+      process.once('SIGTERM', shutdown);
+    } else if (action === 'init' && positionals.length === 1) {
       const { origin, workspace, repository, participants } = values;
       if ([origin, workspace, repository, participants].some(value => value !== undefined)) {
         const people = participants?.split(',') ?? [];

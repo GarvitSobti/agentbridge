@@ -65,12 +65,17 @@ function checks(value: unknown): CheckClaim[] {
 }
 
 export function validateWorkspace(value: unknown): Workspace {
-  const config = object(value, ['id', 'repository', 'participants'], 'workspace');
+  const config = object(value, ['id', 'name', 'repository', 'participants'], 'workspace');
   requireThat(Array.isArray(config.participants) && config.participants.length === 2, 'INVALID_INPUT', 'A workspace needs exactly two participants.');
   const first = identifier(config.participants[0], 'participant');
   const second = identifier(config.participants[1], 'participant');
   requireThat(first !== second, 'INVALID_INPUT', 'Workspace participants must be distinct.');
-  return { id: identifier(config.id, 'workspace ID'), repository: text(config.repository, 'repository', 2_048), participants: [first, second] };
+  return {
+    id: identifier(config.id, 'workspace ID'),
+    repository: text(config.repository, 'repository', 2_048),
+    participants: [first, second],
+    ...(config.name === undefined ? {} : { name: text(config.name, 'workspace name', 80) }),
+  };
 }
 
 export function authorize(workspace: Workspace, value: unknown): Principal {

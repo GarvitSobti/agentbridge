@@ -25,6 +25,7 @@ The next milestone is an internal rehearsal of a complete handoff using a fresh 
 - [x] Exercise invite sign-in, phone approval, and an automatic completion update through public HTTPS. The run used CLI profiles on the laptop and the browser on a physical phone.
 - [x] Land the browser inbox and record the phone evidence in [PR #8](https://github.com/GarvitSobti/agentbridge/pull/8).
 - [x] Add a synthetic fixture, a repeatable rehearsal, and setup diagnostics.
+- [x] Add invite-only workspace creation, teammate invitation, and browser-guided agent pairing.
 - [x] Rehearse stale approval, a discarded write receipt, relay restart, and exact-commit fetch recovery.
 - [x] Rehearse an approval connection drop at phone width, including reload and stale-version recovery.
 - [ ] Repeat interrupted approval on a physical phone during the hosted pilot.

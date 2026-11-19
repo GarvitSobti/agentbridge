@@ -79,7 +79,7 @@ export class SqliteStore {
         } else {
           const existing = decode<Workspace>(row.config_json);
           ensure(existing !== null && typeof existing === 'object' && Array.isArray(existing.participants), 'Workspace configuration is malformed.');
-          if (existing.id !== this.#workspace.id || existing.repository !== this.#workspace.repository
+          if (existing.id !== this.#workspace.id || existing.repository !== this.#workspace.repository || existing.name !== this.#workspace.name
             || existing.participants.length !== 2 || !this.#workspace.participants.every(id => existing.participants.includes(id))) {
             throw new StoreError('WORKSPACE_MISMATCH', 'This workspace ID is already bound to another repository or participant pair.');
           }
@@ -250,7 +250,7 @@ export class SqliteStore {
   }
 
   /** Trusted operator API. The invite URL is displayed only in the operator terminal. */
-  issueBrowserInvite(participantId: string): { id: string; token: string; expiresAt: number } {
+  issueBrowserInvite(participantId: string, replacePending = false): { id: string; token: string; expiresAt: number } {
     const principal = authorize(this.#workspace, { workspaceId: this.#workspace.id, participantId, role: 'human' });
     const id = randomUUID();
     const token = 'abi_' + randomBytes(32).toString('base64url');
@@ -258,6 +258,10 @@ export class SqliteStore {
     const expiresAt = now + INVITE_MS;
     this.#transaction('IMMEDIATE', () => {
       this.#db.prepare('DELETE FROM browser_access WHERE workspace_id = ? AND expires_at <= ?').run(this.#workspace.id, now);
+      if (replacePending) {
+        this.#db.prepare("DELETE FROM browser_access WHERE workspace_id = ? AND participant_id = ? AND kind = 'invite'")
+          .run(this.#workspace.id, principal.participantId);
+      }
       this.#db.prepare("INSERT INTO browser_access (id, workspace_id, participant_id, kind, token_hash, expires_at) VALUES (?, ?, ?, 'invite', ?, ?)")
         .run(id, this.#workspace.id, principal.participantId, browserHash(token, 'invite'), expiresAt);
     });
@@ -299,6 +303,59 @@ export class SqliteStore {
   revokeBrowserAccess(id: string): boolean {
     return this.#transaction('IMMEDIATE', () => Number(this.#db.prepare('DELETE FROM browser_access WHERE workspace_id = ? AND id = ?')
       .run(this.#workspace.id, id).changes) === 1);
+  }
+
+  get workspace(): Workspace { return structuredClone(this.#workspace); }
+
+  betaSetup(principal: Principal) {
+    const actor = authorize(this.#workspace, principal);
+    const [owner, teammate] = this.#workspace.participants;
+    const paired = this.#transaction('DEFERRED', () => this.#db.prepare(
+      'SELECT p.participant_id FROM agent_pairs p JOIN credentials c ON p.credential_id = c.id WHERE p.workspace_id = ? AND c.revoked_at IS NULL',
+    ).all(this.#workspace.id).map(row => row.participant_id));
+    return { owner, teammate, canInvite: actor.role === 'human' && actor.participantId === owner, paired };
+  }
+
+  issuePairCode(principal: Principal): { code: string; expiresAt: number } {
+    const actor = authorize(this.#workspace, principal);
+    if (actor.role !== 'human') throw new DomainError('FORBIDDEN', 'A browser member must issue the pairing code.');
+    const code = 'abp_' + randomBytes(32).toString('base64url');
+    const expiresAt = Date.now() + 10 * 60_000;
+    this.#transaction('IMMEDIATE', () => {
+      this.#db.prepare(`INSERT INTO agent_pairs (workspace_id, participant_id, code_hash, expires_at) VALUES (?, ?, ?, ?)
+        ON CONFLICT(workspace_id, participant_id) DO UPDATE SET code_hash = excluded.code_hash, expires_at = excluded.expires_at, redeemed = 0`)
+        .run(this.#workspace.id, actor.participantId, createHash('sha256').update(code).digest('hex'), expiresAt);
+    });
+    return { code, expiresAt };
+  }
+
+  redeemPairCode(code: unknown, tokenHash: unknown): Omit<IssuedCredential, 'token'> | null {
+    if (typeof code !== 'string' || !/^abp_[A-Za-z0-9_-]{43}$/.test(code)
+        || typeof tokenHash !== 'string' || !/^[a-f0-9]{64}$/.test(tokenHash)) return null;
+    const hash = createHash('sha256').update(code).digest('hex');
+    return this.#transaction('IMMEDIATE', () => {
+      const pair = this.#db.prepare('SELECT participant_id, credential_id, redeemed FROM agent_pairs WHERE workspace_id = ? AND code_hash = ? AND expires_at > ?')
+        .get(this.#workspace.id, hash, Date.now());
+      if (typeof pair?.participant_id !== 'string' || !this.#workspace.participants.includes(pair.participant_id)) return null;
+      const principal = { workspaceId: this.#workspace.id, participantId: pair.participant_id, role: 'agent' } as const;
+      if (pair.redeemed === 1 && typeof pair.credential_id === 'string') {
+        const previous = this.#db.prepare('SELECT id FROM credentials WHERE workspace_id = ? AND id = ? AND token_hash = ? AND revoked_at IS NULL')
+          .get(this.#workspace.id, pair.credential_id, tokenHash);
+        return previous ? { id: pair.credential_id, principal } : null;
+      }
+      if (this.#db.prepare('SELECT 1 FROM credentials WHERE token_hash = ?').get(tokenHash)) return null;
+      const id = randomUUID();
+      const now = new Date().toISOString();
+      if (typeof pair.credential_id === 'string') {
+        this.#db.prepare('UPDATE credentials SET revoked_at = ? WHERE workspace_id = ? AND id = ? AND revoked_at IS NULL')
+          .run(now, this.#workspace.id, pair.credential_id);
+      }
+      this.#db.prepare("INSERT INTO credentials (id, workspace_id, participant_id, role, token_hash, created_at) VALUES (?, ?, ?, 'agent', ?, ?)")
+        .run(id, this.#workspace.id, pair.participant_id, tokenHash, now);
+      this.#db.prepare('UPDATE agent_pairs SET redeemed = 1, credential_id = ? WHERE workspace_id = ? AND participant_id = ?')
+        .run(id, this.#workspace.id, pair.participant_id);
+      return { id, principal };
+    });
   }
 
   close(): void {

@@ -20,8 +20,27 @@
   </header>
   <main class="shell page">
     <div class="gate" id="gate">
-      <h1>Workspace inbox</h1>
+      <h1 id="gate-title">Workspace inbox</h1>
       <p id="gate-message">Checking your session…</p>
+      <form id="create-workspace" class="setup-form" hidden>
+        <label class="field">Workspace name
+          <input name="name" placeholder="Payments handoff" maxlength="80" required>
+        </label>
+        <label class="field">Git repository URL
+          <input name="repository" type="url" placeholder="https://github.com/team/project" maxlength="2048" required>
+        </label>
+        <div class="form-row">
+          <label class="field">Your username
+            <input name="owner" autocomplete="username" pattern="[a-z][a-z0-9\-]{0,39}" maxlength="40" required>
+          </label>
+          <label class="field">Teammate username
+            <input name="teammate" pattern="[a-z][a-z0-9\-]{0,39}" maxlength="40" required>
+          </label>
+        </div>
+        <p class="field-hint">Use lowercase letters, numbers and hyphens. Start with a letter.</p>
+        <button class="primary" type="submit">Create workspace</button>
+        <p class="feedback" id="create-error" role="status"></p>
+      </form>
       <button class="primary" type="button" id="sign-in" hidden>Open workspace</button>
       <button class="secondary" type="button" id="try-again" hidden>Try again</button>
       <noscript><p>Turn on JavaScript to open your workspace.</p></noscript>
@@ -29,11 +48,56 @@
     <div id="workspace" hidden>
       <div class="workspace-header">
         <div>
-          <h1>Workspace inbox</h1>
+          <h1 id="workspace-title">Workspace inbox</h1>
           <p class="workspace-context" id="repo-name"></p>
         </div>
         <button class="secondary" type="button" id="refresh">Refresh</button>
       </div>
+      <details id="workspace-setup" class="setup-panel" hidden>
+        <summary>Workspace setup</summary>
+        <div class="setup-content">
+          <ul class="setup-members" id="setup-members"></ul>
+          <section id="teammate-invite" class="setup-section" hidden>
+            <h2>Invite <span id="teammate-label"></span></h2>
+            <button id="issue-invite" class="secondary" type="button">Create teammate invite</button>
+            <div id="invite-output" class="setup-output" hidden>
+              <label class="field">One-time invite link
+                <input id="teammate-link" readonly>
+              </label>
+              <button class="secondary" type="button" data-copy="teammate-link">Copy invite</button>
+            </div>
+          </section>
+          <section class="setup-section">
+            <h2>Connect your agent</h2>
+            <div class="setup-actions">
+              <label class="field">Assistant
+                <select id="assistant-client">
+                  <option value="codex">Codex</option>
+                  <option value="claude">Claude Code</option>
+                </select>
+              </label>
+              <button id="issue-pair" type="button" class="primary">Generate pairing code</button>
+            </div>
+            <div id="pair-output" class="setup-pair" hidden>
+              <p class="field-hint">On the computer running your assistant, run this in the Agent Bridge checkout. Paste the pairing code when prompted.</p>
+              <div class="setup-output">
+                <label class="field">Setup command
+                  <input id="setup-command" readonly>
+                </label>
+                <button class="secondary" type="button" data-copy="setup-command">Copy command</button>
+              </div>
+              <div class="setup-output">
+                <label class="field">Pairing code
+                  <input id="pairing-code" readonly>
+                </label>
+                <button class="secondary" type="button" data-copy="pairing-code">Copy code</button>
+              </div>
+              <p class="field-hint">First time on this computer? <a href="https://github.com/GarvitSobti/agentbridge/blob/main/docs/BETA_ONBOARDING.md#connect-an-agent">Install the connector</a>.</p>
+            </div>
+          </section>
+          <p class="feedback" id="setup-status" role="status"></p>
+        </div>
+      </details>
       <div class="inbox-layout">
         <nav class="inbox" aria-labelledby="requests-title">
           <h2 id="requests-title">Requests</h2>
